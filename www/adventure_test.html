@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CipherCore | i18Core Adventure Test</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/tomorrow-night.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="page-adventure">
+<header class="site-header">
+    <div class="brand">
+        <div class="logo-wrap">
+            <img class="logo-mark" src="assets/ciphercore-logo.svg" alt="CipherCore Logo">
+            <div class="logo">CipherCore</div>
+        </div>
+        <div class="brand-sub">i18Core Training</div>
+    </div>
+    <nav class="nav">
+        <a class="nav-link" href="index.html">Uebersicht</a>
+        <a class="nav-link active" href="adventure_test.html">Adventure Test</a>
+        <a class="nav-link" href="lehrer_guide.html">Lehrer-Guide</a>
+        <a class="nav-link" href="hint.html">Hinweis</a>
+        <a class="nav-link" href="docs.html">Documentation</a>
+    </nav>
+    <div class="badge">Cohort 2026</div>
+</header>
+
+<section class="hero reveal" style="--delay: 0.1s;">
+    <h1>Token Quest Lab</h1>
+    <p>Junior Developer Training Center | Adventure-basiertes Abschlussprojekt fuer die i18nToken Engine.</p>
+</section>
+
+<div class="layout">
+        <aside class="sidebar reveal" style="--delay: 0.2s;">
+            <h3>Training Map</h3>
+            <a href="#vision">Vision</a>
+            <a href="#projekt">Projekt</a>
+            <a href="#workflow">Workflow</a>
+            <a href="#plural-release">Release & Plural</a>
+            <a href="#challenges">Challenges</a>
+            <a href="#quiz">Zertifizierung</a>
+        </aside>
+
+    <main>
+        <section id="vision" class="card reveal" style="--delay: 0.25s;">
+            <h2>1. Die Vision: Spirit & Body</h2>
+            <p>In der modernen Software-Entwicklung trennen wir den <strong>Geist</strong> (die Logik/Python) vom <strong>Koerper</strong> (die Daten/Texte). Die i18nToken Engine ist das Bindeglied.</p>
+            <p>Warum nutzen wir Hexadezimal-Tokens statt normaler Woerter?</p>
+            <ul>
+                <li><strong>Stabilitaet:</strong> Der Code <code>get_text("0xABC")</code> muss nie geaendert werden, egal ob der Text dahinter "Hallo" oder "Willkommen zurueck, Reisender" heisst.</li>
+                <li><strong>Sicherheit:</strong> Uebersetzer koennen keine Bugs im Code verursachen.</li>
+            </ul>
+        </section>
+
+        <section id="projekt" class="card reveal" style="--delay: 0.3s;">
+            <h2>2. Das Abschlussprojekt: "Token Quest"</h2>
+            <p>Wir bauen ein Text-Adventure. Die gesamte Welt wird in einer Textdatei definiert. Hier ist der Aufbau der <code>world.txt</code>:</p>
+            <div class="code-header"><span>world.txt</span><span style="color:var(--accent)">UTF-8 Encoding</span></div>
+            <pre><code class="language-text"># Raumbeschreibungen
+100(Room_Start): Du stehst in einer dunklen Bibliothek. @200
+101(Room_Cellar): Ein feuchter Keller. Du siehst %0.
+200(Detail_Books): Ueberall stehen Regale voller Python-Buecher.
+
+# Interaktionen
+300(Action_Take): Du hast %0 aufgehoben.
+400(Error_Move): Hier geht es nicht weiter!</code></pre>
+
+            <h3>Die Spiel-Logik in Python</h3>
+            <p>In Python steuern wir nun den Fluss. Wir setzen Platzhalter ein, um das Spiel lebendig zu machen.</p>
+            <div class="code-header"><span>adventure.py</span></div>
+            <pre><code class="language-python"># Beispiel fuer die Spiel-Schleife
+current_room = "100"
+inventory = "Einen goldenen Token"
+
+# Raum beschreiben
+print(engine.translate(current_room))
+
+# Aktion ausfuehren (mit Platzhalter)
+print(engine.translate("300", [inventory]))</code></pre>
+        </section>
+
+        <section id="workflow" class="card reveal" style="--delay: 0.33s;">
+            <h2>3. Produktions-Workflow</h2>
+            <ol>
+                <li><strong>Katalog bauen:</strong> Tokenliste anlegen und Texte einfuegen.</li>
+                <li><strong>Logik verbinden:</strong> Python ruft Tokens statt Klartexten auf.</li>
+                <li><strong>QA-Check:</strong> <code>check_report()</code> ausfuehren und Logs beheben.</li>
+                <li><strong>Playtest:</strong> Story laufen lassen, Platzhalter testen.</li>
+                <li><strong>Release:</strong> Katalog einfrieren, neue Sprache anlegen.</li>
+            </ol>
+            <p><strong>Goldene Regel:</strong> Jede Aenderung am Katalog endet mit einem QA-Report ohne ERROR.</p>
+        </section>
+        <section id="plural-release" class="card reveal" style="--delay: 0.34s;">
+            <h2>4. Release & Pluralformen</h2>
+            <p>Token sind jetzt mehrsprachige Bausteine mit Varianten wie <code>{one}</code> oder <code>{other}</code>. Rufe <code>engine.translate_plural(token, count, args)</code> aus deiner Logik auf, um automatisch die passende Form auszuliefern.</p>
+            <div class="code-header"><span>Plural-Call</span></div>
+            <pre><code class="language-python">print(engine.translate_plural("f1e2d3", item_count, [item_name]))</code></pre>
+            <p>Vor dem Deployment exportierst du den Katalog via <code>python i18n_crypt.py --strict locales/de.txt releases/de.i18n</code>. Die Engine erkennt das Magic-Header-Format und lädt den Binärkatalog in Sekunden.</p>
+            <p><strong>Release-Check:</strong> Bestätige, dass dein <code>releases/*.i18n</code>-Artefakt eine gültige Checksum hat und deine Pluralvarianten enthalten sind.</p>
+        </section>
+
+        <section id="challenges" class="card reveal" style="--delay: 0.35s;">
+            <h2>5. Missions-Board</h2>
+            <div class="challenge-grid">
+                <div class="challenge-box">
+                    <h3>Challenge A: QA-Meister</h3>
+                    <p>Die Engine meldet: <br><code style="color:var(--danger)">ERROR CYCLE: 101 -> 102 -> 101</code></p>
+                    <p>Was ist passiert? Korrigiere die Logik im Kopf!</p>
+                </div>
+                <div class="challenge-box">
+                    <h3>Challenge B: Release-Workflow</h3>
+                    <p>Wie schuetzt du deine <code>world.txt</code> vor Cheatern und stellst ein sauberes Release sicher?</p>
+                    <p>Nutze das neue CLI: <code>python i18n_crypt.py --strict world.txt releases/world.i18n</code>, damit die Engine das binäre Artefakt lädt.</p>
+                </div>
+                <div class="challenge-box">
+                    <h3>Challenge C: Platzhalter-Test</h3>
+                    <p>Fuege eine neue Aktion mit <code>%0</code> und <code>%1</code> ein und teste mit zwei Items.</p>
+                    <p>Ziel: Keine WARN GAP im QA-Report.</p>
+                </div>
+                <div class="challenge-box">
+                    <h3>Challenge D: Lost Token</h3>
+                    <p>Simuliere einen fehlenden Token im Katalog und erklaere, warum <code>strict=True</code> sinnvoll ist.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="freeze-plan" class="card reveal" style="--delay: 0.38s;">
+            <h2>6. Review & Freeze</h2>
+            <p>Die finale Tour: Contract, Tests, Meta-Infos und Overflow melden ist jetzt State-of-the-art. Nur glatte Runs erhalten die finale Zertifizierung.</p>
+            <ul class="checklist">
+                <li><strong>Contract Guard:</strong> `CONTRACT.md` dokumentiert ABI, Binary-Format, Language Spec und the Freeze Plan.</li>
+                <li><strong>Golden Tests:</strong> `tests/run_tests.py` prüft Meta (Locale/Fallback/Note/Plural), QA, Escape-Regeln und `RESULT_TOO_LARGE`.</li>
+                <li><strong>Release Protocol:</strong> Contract-Review → Tests → Binary-Export (`i18n_crypt.py`) → Deployment.</li>
+            </ul>
+            <p>Erst danach: Certificate, Release, und das Training ist wirklich zertifiziert.</p>
+        </section>
+
+        <section id="quiz" class="card quiz-container reveal" style="--delay: 0.4s;">
+            <h2>7. Zertifizierungs-Quiz</h2>
+            <div>
+                <p><strong>1 / 8 - Was ist das grundlegende Prinzip der beschriebenen Internationalisierungs-Engine?</strong></p>
+                <label class="quiz-option"><input type="radio" name="q1" value="a"> A) Sie verwendet stabile, hexadezimale IDs (Tokens), um auf Texte zu verweisen.</label>
+                <label class="quiz-option"><input type="radio" name="q1" value="b"> B) Sie verwendet semantische Schluessel wie 'error.network.timeout' zur Textreferenzierung.</label>
+                <label class="quiz-option"><input type="radio" name="q1" value="c"> C) Sie speichert alle Uebersetzungen direkt im C++-Quellcode als String-Literale.</label>
+                <label class="quiz-option"><input type="radio" name="q1" value="d"> D) Sie uebersetzt Texte zur Laufzeit automatisch mithilfe eines Online-Dienstes.</label>
+
+                <p><strong>2 / 8 - Welche Datei wird beim Kompilieren des Projekts unter Linux erzeugt?</strong></p>
+                <label class="quiz-option"><input type="radio" name="q2" value="a"> A) i18n_engine.a</label>
+                <label class="quiz-option"><input type="radio" name="q2" value="b"> B) i18n_engine.exe</label>
+                <label class="quiz-option"><input type="radio" name="q2" value="c"> C) libi18n_engine.so</label>
+                <label class="quiz-option"><input type="radio" name="q2" value="d"> D) i18n_engine.dll</label>
+
+                <p><strong>3 / 8 - Welches Problem wird von der `i18n_check`-Funktion als 'WARN' (Warnung) und nicht als 'ERROR' eingestuft?</strong></p>
+                <label class="quiz-option"><input type="radio" name="q3" value="a"> A) Ein Text referenziert einen Token, der im Katalog nicht existiert.</label>
+                <label class="quiz-option"><input type="radio" name="q3" value="b"> B) Ein Text verwendet die Platzhalter %0 und %2, laesst aber %1 aus.</label>
+                <label class="quiz-option"><input type="radio" name="q3" value="c"> C) Zwei Tokens referenzieren sich gegenseitig und erzeugen eine Endlosschleife.</label>
+                <label class="quiz-option"><input type="radio" name="q3" value="d"> D) Ein Token im Katalog hat ein ungueltiges hexadezimales Format.</label>
+
+                <p><strong>4 / 8 - Wie wird laut Katalog-Format-Syntax ein literales '@'-Zeichen in einem Text dargestellt?</strong></p>
+                <label class="quiz-option"><input type="radio" name="q4" value="a"> A) \@</label>
+                <label class="quiz-option"><input type="radio" name="q4" value="b"> B) @</label>
+                <label class="quiz-option"><input type="radio" name="q4" value="c"> C) '@'</label>
+                <label class="quiz-option"><input type="radio" name="q4" value="d"> D) @@</label>
+
+                <p><strong>5 / 8 - Welches der mitgelieferten Python-Skripte dient dazu, neue, einzigartige Tokens fuer den Katalog zu erzeugen?</strong></p>
+                <label class="quiz-option"><input type="radio" name="q5" value="a"> A) i18n_new_token.py</label>
+                <label class="quiz-option"><input type="radio" name="q5" value="b"> B) i18n_crypt.py</label>
+                <label class="quiz-option"><input type="radio" name="q5" value="c"> C) i18n_qa.py</label>
+                <label class="quiz-option"><input type="radio" name="q5" value="d"> D) i18n.py</label>
+
+                <p><strong>6 / 8 - Was ist die empfohlene Methode, um Pufferueberlaeufe bei der Verwendung von `i18n_translate` zu vermeiden, wenn die Laenge des Ergebnisses unbekannt ist?</strong></p>
+                <label class="quiz-option"><input type="radio" name="q6" value="a"> A) Sich darauf verlassen, dass die Funktion den benoetigten Speicher automatisch allokiert.</label>
+                <label class="quiz-option"><input type="radio" name="q6" value="b"> B) Die Funktion `i18n_calculate_size` vor dem eigentlichen Uebersetzungsaufruf verwenden.</label>
+                <label class="quiz-option"><input type="radio" name="q6" value="c"> C) Einen sehr grossen, festen Puffer von z. B. 8192 Bytes zuweisen.</label>
+                <label class="quiz-option"><input type="radio" name="q6" value="d"> D) Die Funktion zunaechst mit `out_buf=NULL` aufrufen, um die benoetigte Groesse zu ermitteln.</label>
+
+                <p><strong>7 / 8 - Welche technische Eigenschaft ermoeglicht die nahtlose Integration der in C++ geschriebenen Engine in Sprachen wie C# oder Python?</strong></p>
+                <label class="quiz-option"><input type="radio" name="q7" value="a"> A) Die automatische Betriebssystem-Erkennung im Makefile.</label>
+                <label class="quiz-option"><input type="radio" name="q7" value="b"> B) Die Verwendung der C++17 Standardbibliothek (STL).</label>
+                <label class="quiz-option"><input type="radio" name="q7" value="c"> C) Kompilierung ohne externe Abhaengigkeiten.</label>
+                <label class="quiz-option"><input type="radio" name="q7" value="d"> D) Die Bereitstellung eines universellen C-ABI (extern "C").</label>
+
+                <p><strong>8 / 8 - Welche Programmiersprache, ausser C++ und Python, wird den Dateinamen nach zu urteilen im Projektumfeld ebenfalls verwendet?</strong></p>
+                <label class="quiz-option"><input type="radio" name="q8" value="a"> A) Java</label>
+                <label class="quiz-option"><input type="radio" name="q8" value="b"> B) Go</label>
+                <label class="quiz-option"><input type="radio" name="q8" value="c"> C) C#</label>
+                <label class="quiz-option"><input type="radio" name="q8" value="d"> D) Rust</label>
+
+                <br>
+                <button class="btn" onclick="checkFinalQuiz()">Pruefung einreichen</button>
+                <p id="final-result"></p>
+            </div>
+        </section>
+
+
+        <div id="cert" class="certificate reveal" style="--delay: 0.45s;">
+            <div style="border: 2px solid #d4af37; padding: 20px;">
+                <h1 style="color: #1a1a1a; font-size: 3rem; margin-bottom: 0;">OFFIZIELLES ZERTIFIKAT</h1>
+                <p style="letter-spacing: 5px; color: #d4af37; font-weight: bold;">I18N TOKEN ENGINE SPECIALIST</p>
+                <hr style="width: 50%; border: 0; border-top: 1px solid #ccc; margin: 30px auto;">
+                <p>Diese Urkunde bestaetigt, dass</p>
+                <h2 id="student-name" style="color: #1e1b4b; font-size: 2.2rem; border: none; font-style: italic;">[DEIN NAME]</h2>
+                <p>die Masterclass fuer <strong>Token-basierte Software-Lokalisierung</strong> erfolgreich absolviert hat.</p>
+                <p>Faehigkeiten: Python API Integration, Cross-Language Memory Management, Statische Katalog-Analyse.</p>
+                <div style="display: flex; justify-content: space-around; margin-top: 40px;">
+                    <div style="text-align: center;">
+                        <div style="border-top: 1px solid #333; width: 150px; margin-bottom: 5px;"></div>
+                        <small>Dozent: CipherCore Academy</small>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="border-top: 1px solid #333; width: 150px; margin-bottom: 5px;"></div>
+                        <small>Datum: 30.01.2026</small>
+                    </div>
+                </div>
+                <div style="position: absolute; bottom: 20px; right: 20px; opacity: 0.08; font-size: 4rem; font-weight: bold;">VALID</div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<footer>
+    <p>&copy; 2026 CipherCore Academy | Adventure Test Suite</p>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+<script>
+    function checkFinalQuiz() {
+        const answers = { q1: 'a', q2: 'c', q3: 'b', q4: 'a', q5: 'a', q6: 'd', q7: 'd', q8: 'c' };
+        let score = 0;
+        Object.keys(answers).forEach((key) => {
+            const selected = document.querySelector(`input[name="${key}"]:checked`)?.value;
+            if (selected === answers[key]) score += 1;
+        });
+
+        const result = document.getElementById('final-result');
+        if (score >= 6) {
+            const name = prompt("Exzellent! Du hast die Pruefung bestanden. Gib deinen Namen fuer dein offizielles Zertifikat ein:");
+            if (name) {
+                document.getElementById('student-name').innerText = name;
+                document.getElementById('cert').style.display = 'block';
+                document.getElementById('cert').scrollIntoView({ behavior: 'smooth' });
+                confetti();
+            }
+            result.textContent = `Bestanden: ${score} / 8`;
+        } else {
+            result.textContent = `Nicht bestanden: ${score} / 8. Bitte wiederhole die Module zu FFI, QA und Katalog-Regeln.`;
+        }
+    }
+    function confetti() {
+        console.log("Stell dir vor, hier fliegt Konfetti! Glueckwunsch!");
+    }
+</script>
+</body>
+</html>

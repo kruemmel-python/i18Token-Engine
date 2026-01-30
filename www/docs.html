@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CipherCore | Documentation - Masterclass 2026</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/tomorrow-night.min.css" rel="stylesheet" />
+    <style>
+        :root {
+            --primary: #00d4ff;
+            --secondary: #0055ff;
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --text: #f8fafc;
+            --accent: #22c55e;
+            --warning: #facc15;
+            --danger: #ef4444;
+            --gold: #c39a2b;
+            --nav-bg: rgba(239, 246, 255, 0.1);
+            --border-color: #4a5568;
+        }
+
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            margin: 0;
+            scroll-behavior: smooth;
+        }
+
+        /* HEADER */
+        .site-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem 5%;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(15px);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .brand { display: flex; align-items: center; gap: 15px; }
+        .logo-text { font-size: 1.4rem; font-weight: 700; color: #fff; }
+        .brand-sub { font-size: 0.85rem; color: var(--primary); opacity: 0.9; }
+
+        .nav { display: flex; gap: 1rem; align-items: center; }
+        .nav-link { 
+            text-decoration: none; 
+            color: #94a3b8; 
+            font-weight: 500; 
+            font-size: 0.95rem;
+            transition: all 0.3s; 
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+        }
+        .nav-link:hover { color: var(--primary); background: rgba(255,255,255,0.05); }
+        .nav-link.active { color: var(--primary); background: var(--nav-bg); }
+
+        .cohort-badge {
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            padding: 0.4rem 1.2rem;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        /* LAYOUT */
+        .layout { display: grid; grid-template-columns: 260px 1fr; gap: 2rem; padding: 2rem 5%; }
+        
+        .sidebar { position: sticky; top: 120px; height: fit-content; }
+        .sidebar h3 { font-size: 0.8rem; text-transform: uppercase; opacity: 0.5; letter-spacing: 1px; margin-bottom: 1rem; }
+        .sidebar a { display: block; padding: 0.6rem 0; color: #94a3b8; text-decoration: none; transition: 0.3s; }
+        .sidebar a:hover { color: var(--primary); padding-left: 8px; }
+
+        .card { background: var(--card-bg); border-radius: 16px; padding: 2.5rem; margin-bottom: 2rem; border: 1px solid rgba(255,255,255,0.05); }
+
+        /* CONTENT STYLING */
+        h1, h2, h3 { color: var(--primary); margin-top: 1.5em; border-bottom: 1px solid var(--border-color); padding-bottom: 0.3em; }
+        h1 { font-size: 2.5rem; margin-top: 0; }
+        
+        .code-header { background: #0f172a; padding: 0.6rem 1rem; border-radius: 8px 8px 0 0; font-size: 0.75rem; color: var(--primary); border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; }
+        pre { margin: 0 0 1.5rem 0 !important; border-radius: 0 0 8px 8px !important; }
+        
+        table { border-collapse: collapse; width: 100%; margin: 1.5rem 0; border-radius: 8px; overflow: hidden; }
+        th, td { border: 1px solid var(--border-color); padding: 0.75rem; text-align: left; }
+        th { background-color: rgba(0,0,0,0.3); color: var(--primary); }
+        
+        .feature-list { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; list-style: none; padding: 0; }
+        .feature-list li::before { content: "🚀 "; }
+
+        footer { text-align: center; padding: 4rem; opacity: 0.5; font-size: 0.8rem; }
+
+        @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } .sidebar { display: none; } }
+    </style>
+</head>
+<body>
+
+<header class="site-header">
+    <div class="brand">
+        <div style="background: linear-gradient(135deg, #00d4ff, #0055ff); width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center;">
+            <span style="color:white; font-weight:bold;">S</span>
+        </div>
+        <div>
+            <div class="logo-text">CipherCore</div>
+            <div class="brand-sub">i18Core Training</div>
+        </div>
+    </div>
+    
+    <nav class="nav">
+        <a class="nav-link" href="index.html">Uebersicht</a>
+        <a class="nav-link" href="adventure_test.html">Adventure Test</a>
+        <a class="nav-link" href="lehrer_guide.html">Lehrer-Guide</a>
+        <a class="nav-link" href="hint.html">Hinweis</a>
+        <a class="nav-link active" href="docs.html">Documentation</a>
+    </nav>
+    
+    <div class="cohort-badge">Cohort 2026</div>
+</header>
+
+<div class="layout">
+    <aside class="sidebar">
+        <h3>Dokumentation</h3>
+        <a href="#intro">Einführung</a>
+        <a href="#features">Features</a>
+        <a href="#build">Build & Installation</a>
+        <a href="#format">Katalog-Format</a>
+        <a href="#meta">Meta-Header</a>
+        <a href="#plural">Plural-Regeln</a>
+        <a href="#api">API Referenz</a>
+        <a href="#qa">Statische Analyse</a>
+        <a href="#scripts">Hilfsskripte</a>
+        <a href="#best-practices">Best Practices</a>
+    </aside>
+
+    <main class="card">
+        <section id="intro">
+            <h1>Token-basierte I18n Engine (Native Core)</h1>
+            <p>Eine hochperformante, speichersichere und abhängigkeitsfreie Internationalisierungs-Engine, geschrieben in C++17.</p>
+            <p>Diese Engine implementiert das Konzept der <strong>Token-basierten Übersetzung</strong>: Texte werden im Code nicht durch semantische Schlüssel (z.B. <code>error.network.timeout</code>), sondern durch stabile, hexadezimale IDs (z.B. <code>a1b2c3d</code>) referenziert. Dies entkoppelt die Entwicklung vollständig von redaktionellen Inhalten und ermöglicht eine Behandlung von Texten als reine Daten-Assets.</p>
+            <p>Die Engine wird als <strong>Shared Library (.dll / .so)</strong> bereitgestellt und bietet ein universelles <strong>C-ABI</strong>, wodurch sie sich nahtlos in C#, Python, Rust, Node.js und andere Sprachen integrieren lässt.</p>
+        </section>
+
+        <section id="features">
+            <h2>🚀 Features</h2>
+            <ul class="feature-list">
+                <li><strong>Universelle Kompatibilität:</strong> Sauberes C-Interface.</li>
+                <li><strong>Zero Dependencies:</strong> Rein C++17 STL.</li>
+                <li><strong>Mächtige Text-Komposition:</strong> Platzhalter & Inline-Referenzen.</li>
+                <li><strong>Rekursion:</strong> Verschachtelte Auflösungen mit Limit.</li>
+                <li><strong>Zyklus-Erkennung:</strong> Schutz vor Endlosschleifen.</li>
+                <li><strong>Speichersicherheit:</strong> Puffer-Überlaufschutz.</li>
+                <li><strong>Determinismus:</strong> Sortierte Ausgaben für Diffs.</li>
+                <li><strong>DX:</strong> Integrierte statische Analyse.</li>
+            </ul>
+        </section>
+
+        <section id="build">
+            <h2>📦 Build & Installation</h2>
+            <p>Voraussetzungen: C++17 Compiler & Make.</p>
+            <div class="code-header"><span>Terminal</span></div>
+            <pre><code class="language-bash">make</code></pre>
+            <p>Erzeugt: <code>i18n_engine.dll</code> (Windows) oder <code>libi18n_engine.so</code> (Linux).</p>
+        </section>
+
+        <section id="format">
+            <h2>📄 Katalog-Format (.txt)</h2>
+            <p>UTF-8 kodierte Textdateien, zeilenbasiert.</p>
+            <div class="code-header"><span>Syntax</span></div>
+            <pre><code class="language-text">TOKEN{optional_variant}(OptionalesLabel): Textinhalt</code></pre>
+            <div class="code-header"><span>Beispiel de.txt</span></div>
+            <pre><code class="language-text"># Kommentare beginnen mit #
+12fe3e4(AppTitle): Meine Super App
+b16b00b(Welcome): Willkommen, %0!
+a1b2c3d(Dialog): @12fe3e4 sagt: @b16b00b</code></pre>
+        </section>
+
+        <section id="meta">
+            <h2>Meta-Header (optional)</h2>
+            <p>Konfiguration vor der ersten Token-Zeile:</p>
+            <pre><code class="language-text">@meta locale=de_DE
+@meta plural=DEFAULT
+@meta fallback=en_US
+@meta note=Internal build 2026-01-31</code></pre>
+        </section>
+
+        <section id="plural">
+            <h2>Plural-Regeln</h2>
+            <table>
+                <thead><tr><th>Regel</th><th>Entscheidungslogik</th></tr></thead>
+                <tbody>
+                    <tr><td>DEFAULT</td><td>0→zero, 1→one, sonst other</td></tr>
+                    <tr><td>SLAVIC</td><td>one/few/many (ru/pl-Formel)</td></tr>
+                    <tr><td>ARABIC</td><td>zero, one, two, few, many, other</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section id="api">
+            <h2>🛠 API Referenz</h2>
+            <h3>Lifecycle</h3>
+            <pre><code class="language-c">void* i18n_new(void);
+void i18n_free(void* ptr);</code></pre>
+            <h3>Übersetzung</h3>
+            <pre><code class="language-c">int i18n_translate(void* ptr, const char* token, const char** args, int args_len, char* out_buf, int buf_size);</code></pre>
+            <p><em>Hinweis: Liefert -1 bei RESULT_TOO_LARGE (Limit 16 MiB).</em></p>
+        </section>
+
+        <section id="qa">
+            <h2>🛡️ Statische Analyse (check)</h2>
+            <p>Validiert die logische Konsistenz.</p>
+            <div class="code-header"><span>Report Beispiel</span></div>
+            <pre><code class="language-text">WARN b16b00b: Placeholder-Lücke. Gefunden: %0, %2
+ERROR a1b2c3d: Missing inline ref @fffffff
+ERROR CYCLE: 123456 -> 654321 -> 123456</code></pre>
+        </section>
+
+        <section id="best-practices">
+            <h2>💡 Best Practices</h2>
+            <ul>
+                <li><strong>Strict Mode:</strong> In Dev immer <code>strict=1</code> nutzen.</li>
+                <li><strong>Puffer-Management:</strong> Erst <code>out_buf=NULL</code> rufen für die Länge.</li>
+                <li><strong>Release:</strong> Immer <code>i18n_crypt.py</code> für Binär-Assets nutzen.</li>
+                <li><strong>Threading:</strong> Die Engine ist nicht threadsicher.</li>
+            </ul>
+        </section>
+
+        <p style="text-align: center; margin-top: 3rem; opacity: 0.5;">
+            © 2024–2026 Token-Based I18n Engine Project | CipherCore Education
+        </p>
+    </main>
+</div>
+
+<footer>
+    <p>&copy; 2026 CipherCore Academy | Professional Software Engineering Suite</p>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+</body>
+</html>

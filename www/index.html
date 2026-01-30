@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CipherCore | i18Core Training - Masterclass</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/tomorrow-night.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="page-overview">
+<a class="skip" href="#content">Zum Inhalt springen</a>
+
+<header class="site-header">
+    <div class="brand">
+        <div class="logo-wrap">
+            <img class="logo-mark" src="assets/ciphercore-logo.svg" alt="CipherCore Logo">
+            <div class="logo">CipherCore</div>
+        </div>
+        <div class="brand-sub">i18Core Training</div>
+    </div>
+    <nav class="nav">
+        <a class="nav-link active" href="index.html">Uebersicht</a>
+        <a class="nav-link" href="adventure_test.html">Adventure Test</a>
+        <a class="nav-link" href="lehrer_guide.html">Lehrer-Guide</a>
+        <a class="nav-link" href="hint.html">Hinweis</a>
+        <a class="nav-link" href="docs.html">Documentation</a>
+    </nav>
+    <div class="badge">Cohort 2026</div>
+</header>
+
+<section class="hero reveal" style="--delay: 0.1s;">
+    <h1>i18nToken Engine</h1>
+    <p>Professionelles Schulungsprogramm von CipherCore. Masterclass fuer moderne Software-Lokalisierung und die i18Core Engine.</p>
+</section>
+
+<div class="layout">
+    <aside class="sidebar reveal" style="--delay: 0.2s;">
+        <h3>Module</h3>
+        <a href="#dashboard">Dashboard</a>
+        <a href="#modul1">Lernziele & Kompetenzen</a>
+        <a href="#modul2">Was ist die Engine?</a>
+        <a href="#modul3">Architektur: Logik vs. Katalog</a>
+        <a href="#modul4">Shared Library & FFI</a>
+        <a href="#modul5">Katalog-Format & Regeln</a>
+        <a href="#modul6">QA Logs & Fehlersuche</a>
+        <a href="#modul7">Python API</a>
+        <a href="#modul8">Bug-Hunter</a>
+        <a href="#modul9">Pluralformen & Release</a>
+        <a href="hint.html">Hinweis</a>
+        <a href="#quiz">Quick-Check</a>
+    </aside>
+
+    <main id="content">
+        <section id="dashboard" class="card dashboard reveal" style="--delay: 0.22s;">
+            <h2>Training Dashboard</h2>
+            <div class="stat-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Fortschritt</div>
+                    <div class="stat-value" id="stat-progress">68%</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Module abgeschlossen</div>
+                    <div class="stat-value" id="stat-modules">4 / 8</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Skill Score</div>
+                    <div class="stat-value" id="stat-score">A-</div>
+                </div>
+            </div>
+            <div class="progress-wrap">
+                <div class="stat-label">Naechster Meilenstein: Zertifikat</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill"></div>
+                </div>
+                <div class="badge-row" id="badge-row">
+                    <span class="badge-chip" data-badge="token-architect">Token Architect</span>
+                    <span class="badge-chip" data-badge="qa-hunter">QA Hunter</span>
+                    <span class="badge-chip" data-badge="api-integrator">API Integrator</span>
+                    <span class="badge-chip" data-badge="localization-pro">Localization Pro</span>
+                    <span class="badge-chip" data-badge="certified">Certified Core</span>
+                    <span class="badge-chip locked" data-badge="release-master">Release Master</span>
+                </div>
+            </div>
+            <div class="dashboard-controls" aria-label="Dashboard Einstellungen">
+                <label for="progress-range">Fortschritt anpassen
+                    <input type="range" id="progress-range" min="0" max="100" value="68">
+                </label>
+                <div class="module-checks">
+                    <label><input type="checkbox" data-module="1"> Lernziele & Kompetenzen</label>
+                    <label><input type="checkbox" data-module="2"> Was ist die Engine?</label>
+                    <label><input type="checkbox" data-module="3"> Architektur: Logik vs. Katalog</label>
+                    <label><input type="checkbox" data-module="4"> Shared Library & FFI</label>
+                    <label><input type="checkbox" data-module="5"> Katalog-Format & Regeln</label>
+                    <label><input type="checkbox" data-module="6"> QA Logs & Fehlersuche</label>
+                    <label><input type="checkbox" data-module="7"> Python API</label>
+                    <label><input type="checkbox" data-module="8"> Bug-Hunter Challenge</label>
+                    <label><input type="checkbox" data-module="9"> Pluralformen & Release</label>
+                </div>
+                <label for="score-select">Skill Score
+                    <select id="score-select">
+                        <option value="B">B</option>
+                        <option value="B+">B+</option>
+                        <option value="A-" selected>A-</option>
+                        <option value="A">A</option>
+                        <option value="A+">A+</option>
+                    </select>
+                </label>
+                <button class="btn" id="reset-dashboard">Dashboard zuruecksetzen</button>
+            </div>
+            <div class="module-summary" id="module-summary"></div>
+            <div class="meta-insight">
+                <h3>Asset Meta Snapshot</h3>
+                <p>Metadaten (@meta locale/fallback/plural/note) wandern ins Binärformat und lassen sich per API (z. B. <code>i18n_get_meta_locale_copy</code>, <code>i18n_get_meta_note_copy</code>) auslesen.</p>
+                <div class="meta-grid">
+                    <div>
+                        <strong>Locale</strong><br>
+                        <code>de_DE</code><br>
+                        <span>i18n_get_meta_locale_copy</span>
+                    </div>
+                    <div>
+                        <strong>Fallback</strong><br>
+                        <code>en_US</code><br>
+                        <span>i18n_get_meta_fallback_copy</span>
+                    </div>
+                    <div>
+                        <strong>Plural Rule</strong><br>
+                        <code>SLAVIC</code><br>
+                        <span>i18n_get_meta_plural_rule</span>
+                    </div>
+                    <div>
+                        <strong>Build Note</strong><br>
+                        <code>Training 2026</code><br>
+                        <span>i18n_get_meta_note_copy</span>
+                    </div>
+                    <div>
+                        <strong>Overflow Guard</strong><br>
+                        <code>RESULT_TOO_LARGE</code><br>
+                        <span>i18n_last_error_copy</span>
+                    </div>
+                </div>
+            </div>
+            <div class="action-panel" id="action-panel">
+                <h3>Aktuelle Lernauftraege</h3>
+                <ul id="action-items"></ul>
+            </div>
+        </section>
+
+        <section id="modul1" class="card reveal" style="--delay: 0.25s;">
+            <h2>1. Lernziele & Kompetenzen</h2>
+            <p>Am Ende der Masterclass koennen Schueler die i18nToken Engine sicher in eigene Projekte integrieren und Fehler systematisch finden.</p>
+            <ul>
+                <li><strong>Technisch:</strong> Verstaendnis von Shared Libraries (DLL/SO) und FFI (Foreign Function Interface) via <code>ctypes</code>.</li>
+                <li><strong>Architektonisch:</strong> Trennung von Logik (Python) und statischen Ressourcen (TXT-Katalog).</li>
+                <li><strong>Qualitaetssicherung:</strong> Nutzung von Fehlerberichten (QA-Logs) zur Fehlerbehebung in Datenstrukturen.</li>
+            </ul>
+            <p><strong>Output der Einheit:</strong> Ein lauffaehiges Text-Adventure mit sauberem Katalog, funktionierenden Platzhaltern und einem finalen QA-Report ohne Errors.</p>
+        </section>
+
+        <section id="modul2" class="card reveal" style="--delay: 0.28s;">
+            <h2>2. Was ist die i18nToken Engine?</h2>
+            <p>Die <strong>i18nToken Engine</strong> ist ein Hochleistungs-Kern (C++17), der Texte aus dem Code auslagert. Statt echter Saetze verwendet der Code stabile Token-IDs.</p>
+            <ul>
+                <li><strong>i18n:</strong> Abkuerzung fuer Internationalization.</li>
+                <li><strong>Token-basiert:</strong> IDs bleiben stabil, auch wenn Texte uebersetzt oder erweitert werden.</li>
+                <li><strong>Hybrid:</strong> C++ liefert Geschwindigkeit, Python liefert Flexibilitaet.</li>
+            </ul>
+            <p><strong>Warum wichtig?</strong> Lokalisierung wird skalierbar, Uebersetzer koennen ohne Code-Aenderung arbeiten.</p>
+        </section>
+
+        <section id="modul3" class="card reveal" style="--delay: 0.31s;">
+            <h2>3. Architektur: Logik vs. Katalog</h2>
+            <p>Wir trennen die Anwendung in zwei Schichten:</p>
+            <ul>
+                <li><strong>Logikschicht:</strong> Python-Code steuert Ablaufe, Zustande und Entscheidungen.</li>
+                <li><strong>Textschicht:</strong> TXT-Katalog enthaelt alle Spracheintraege als Token.</li>
+            </ul>
+            <p>Dadurch entstehen klare Schnittstellen: Python kennt nur Tokens, der Katalog kennt keine Logik. Das reduziert Bugs und macht Aenderungen sicher.</p>
+            <div class="code-header"><span>Beispielstruktur</span><span style="color:var(--accent)">Projekt</span></div>
+            <pre><code class="language-text">/project
+  main.py
+  i18n_engine.dll
+  world.txt
+  locales/
+    de.txt
+    en.txt</code></pre>
+        </section>
+
+        <section id="modul4" class="card reveal" style="--delay: 0.34s;">
+            <h2>4. Shared Library & FFI (ctypes)</h2>
+            <p>Die Engine wird als DLL oder SO geladen. <code>ctypes</code> macht die C-API in Python nutzbar.</p>
+            <ul>
+                <li><strong>DLL/SO:</strong> Kompilierter Kern, der Funktionen exportiert.</li>
+                <li><strong>FFI:</strong> Foreign Function Interface verbindet Python und C.</li>
+                <li><strong>64-Bit Regel:</strong> Python und DLL muessen die gleiche Architektur haben.</li>
+            </ul>
+            <div class="code-header"><span>Minimaler Ladevorgang</span></div>
+            <pre><code class="language-python">import ctypes
+
+lib = ctypes.CDLL("i18n_engine.dll")
+lib.i18n_new.restype = ctypes.c_void_p
+handle = lib.i18n_new()</code></pre>
+        </section>
+
+        <section id="modul5" class="card reveal" style="--delay: 0.37s;">
+            <h2>5. Katalog-Format & Regeln</h2>
+            <p>Der TXT-Katalog ist das Herz der Lokalisierung. Jede Zeile folgt einem klaren Muster:</p>
+            <div class="code-header"><span>Syntax</span><span style="color:var(--accent)">Token</span></div>
+            <pre><code class="language-text">TOKEN_ID(Optionaler_Name): Text mit @Referenzen und %0 Platzhaltern</code></pre>
+            <ul>
+                <li><strong>@Token:</strong> Fuegt einen anderen Textbaustein ein.</li>
+                <li><strong>%0, %1:</strong> Platzhalter, die in Python ersetzt werden.</li>
+                <li><strong>Keine Luecken:</strong> Platzhalter muessen lueckenlos nummeriert sein.</li>
+            </ul>
+            <div class="code-header"><span>Beispiel</span></div>
+            <pre><code class="language-text">100(Room_Start): Willkommen @200
+200(Detail): in der Bibliothek.
+300(Action_Take): Du hebst %0 auf.</code></pre>
+        </section>
+
+        <section id="modul6" class="card reveal" style="--delay: 0.4s;">
+            <h2>6. QA Logs & Fehlersuche</h2>
+            <p>Die Engine liefert Diagnose-Logs fuer Qualitaetssicherung. Diese Logs helfen, Fehler in Datenstrukturen zu finden.</p>
+            <div class="code-header"><span>Beispiel QA-Report</span></div>
+            <pre><code class="language-text">ERROR CYCLE: 100 -> 200 -> 100
+ERROR MISSING: @999 wurde referenziert
+WARN GAP: Platzhalter %0 und %2 (fehlendes %1)</code></pre>
+            <ul>
+                <li><strong>CYCLE:</strong> Endlosschleifen durch gegenseitige Referenzen.</li>
+                <li><strong>MISSING:</strong> Token wird verwendet, existiert aber nicht.</li>
+                <li><strong>GAP:</strong> Platzhalter-Nummerierung ist nicht durchgaengig.</li>
+            </ul>
+            <p><strong>Praxis:</strong> QA-Report nach jedem Update laufen lassen, bevor neue Sprachen hinzugefuegt werden.</p>
+        </section>
+
+        <section id="modul7" class="card reveal" style="--delay: 0.43s;">
+            <h2>7. Der Python-Code (Vollstaendige API)</h2>
+            <p>Kopiere diesen Code in deine <code>main.py</code>, um die Engine zu steuern.</p>
+            <pre><code class="language-python">import ctypes
+import os
+
+class I18nEngine:
+    def __init__(self, lib_path):
+        self.lib = ctypes.CDLL(lib_path)
+        self.lib.i18n_new.restype = ctypes.c_void_p
+        self.handle = self.lib.i18n_new()
+
+    def load_file(self, path, strict=True):
+        return self.lib.i18n_load_txt_file(self.handle, path.encode('utf-8'), 1 if strict else 0) == 0
+
+    def translate(self, token, args=[]):
+        c_args = (ctypes.c_char_p * len(args))(*[s.encode('utf-8') for s in args])
+        length = self.lib.i18n_translate(self.handle, token.encode('utf-8'), c_args, len(args), None, 0)
+        if length < 0: return f"[{token} fehlt]"
+        buf = ctypes.create_string_buffer(length + 1)
+        self.lib.i18n_translate(self.handle, token.encode('utf-8'), c_args, len(args), buf, length + 1)
+        return buf.value.decode('utf-8')
+
+    def check_report(self):
+        buf = ctypes.create_string_buffer(8192)
+        self.lib.i18n_check(self.handle, buf, 8192)
+        return buf.value.decode('utf-8')</code></pre>
+            <p><strong>Tipp:</strong> Arbeite zuerst mit <code>strict=True</code>, um Fehler frueh zu sehen. In Produktion kannst du fuer Toleranz auf <code>strict=False</code> wechseln.</p>
+        </section>
+
+        <section id="modul8" class="card reveal" style="--delay: 0.46s;">
+            <h2>8. Uebung: Die "Bug-Hunter" Challenge</h2>
+            <p>Erstelle eine <code>challenge.txt</code> und behebe die Fehler, die die Engine meldet:</p>
+            <div class="bug-box">
+                <pre>
+# Finde die Fehler!
+a1a1a1(Loop): Verweis auf @b2b2b2
+b2b2b2(Loop): Verweis auf @a1a1a1
+c3c3c3(Error): Hier fehlt %1 aber %2 ist da.
+                </pre>
+            </div>
+            <p><strong>Ziel:</strong> Produziere einen QA-Report ohne ERROR und ohne WARN.</p>
+        </section>
+        <section id="modul9" class="card reveal" style="--delay: 0.48s;">
+            <h2>9. Pluralformen & Binäre Releases</h2>
+            <p>Der nächste Schritt heisst „industriehart“: Tokens liefern je nach Count unterschiedliche Texte und werden für den Release in ein binäres Format mit Magic-Header exportiert.</p>
+            <ul>
+                <li><strong>Pluralformen:</strong> Definiere Token wie <code>f1e2d3{one}</code> und <code>f1e2d3{other}</code> für Count=1 bzw. Count≠1 und nutze <code>i18n_translate_plural</code>.</li>
+                <li><strong>Binary Release:</strong> Nutze <code>python i18n_crypt.py locales/de.txt releases/de.i18f</code> um das binäre Artefakt zu erzeugen – der Header enthält Magic-Bytes, Version, Flags und CRC.</li>
+                <li><strong>Pipeline:</strong> Strict Mode → QA → Binary Export → Deploy (Keine XOR-Heuristik mehr).</li>
+            </ul>
+            <div class="code-header"><span>Release-Befehl</span></div>
+            <pre><code class="language-bash">python i18n_crypt.py --strict locales/de.txt releases/de.i18n</code></pre>
+            <p>Die fertige <code>.i18n</code>-Datei wird von der Engine automatisch erkannt und lädt schneller, weil sie die Line-by-Line-Parse-Schicht überspringt.</p>
+        </section>
+
+        <section id="modul10" class="card reveal" style="--delay: 0.52s;">
+            <h2>10. Meta-Header & Overflow-Hinweise</h2>
+            <p>Die Masterclass schließt mit einem Verständnis dafür, wie <code>@meta</code>-Zeilen den Release konfiguriert und wie die API mit Grenzfällen umgeht.</p>
+            <ul>
+                <li><strong>Meta-Header:</strong> <code>@meta locale=de_DE</code>, <code>@meta fallback=en_US</code>, <code>@meta plural=SLAVIC</code> und <code>@meta note="Build 2026-01-30"</code> wandern in den Version‑2-Header und lassen sich später über die API auslesen.</li>
+                <li><strong>API-Inspector:</strong> <code>i18n_get_meta_locale_copy</code>, <code>i18n_get_meta_fallback_copy</code> und <code>i18n_get_meta_plural_rule</code> liefern die eingepackten Werte und passen UI/Tests automatisch an.</li>
+                <li><strong>Overflow-Schutz:</strong> Die Übersetzungsfunktionen geben <code>-1</code> zurück, wenn der Platzbedarf über die 32-Bit-Grenze springt. Die genaue Meldung findet man via <code>i18n_last_error_copy</code> (z. B. <code>RESULT_TOO_LARGE</code>).</li>
+            </ul>
+            <div class="code-header"><span>Meta + Fault Handling</span></div>
+            <pre><code class="language-c">// Locale auslesen
+char buf[64];
+i18n_get_meta_locale_copy(engine, buf, sizeof(buf));
+
+// Overflow erkennen
+int len = i18n_translate(engine, "token", args, 2, NULL, 0);
+if (len < 0) {
+  i18n_last_error_copy(engine, buf, sizeof(buf));
+  puts(buf); // RESULT_TOO_LARGE wenn der Puffer zu klein ist
+}</code></pre>
+            <p>In der Meisterklasse demonstriert ihr, wie die Meta-Infos im Dashboard angezeigt und wie Überlaufmeldungen sinnvoll gezielt an Feedback-Mechanismen gebunden werden.</p>
+        </section>
+
+        <section id="system-guide" class="card reveal" style="--delay: 0.48s;">
+            <h2>System-Integrationsleitfaden: i18Token-Engine</h2>
+            <p>Enterprise-Engines muessen in heterogene Stacks eingebunden werden. Die i18Token-Engine stellt dafuer eine Zero-Dependency-Infrastruktur zur Verfuegung, die auf C++17 und der STL basiert, und trennt redaktionelle Inhalte komplett von der Logik.</p>
+            <ul>
+                <li><strong>C++17 Standard:</strong> Modernste Sprachfeatures liefern Performance und Typsicherheit.</li>
+                <li><strong>Zero Dependencies:</strong> Nur die STL, keine externen Laufzeitbibliotheken.</li>
+                <li><strong>C-ABI:</strong> Stabile extern "C" Schnittstelle eliminiert Name-Mangling.</li>
+                <li><strong>Robustheit:</strong> Zyklus-Erkennung, deterministische Sortierung, reproduzierbare CI/CD-Runs.</li>
+            </ul>
+            <h3>Token-Entkopplung vs. semantische Schluessel</h3>
+            <table class="detail-table">
+                <thead>
+                    <tr><th>Aspekt</th><th>Semantische Schluessel</th><th>Token-Entkopplung (i18Token)</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Wartbarkeit</td><td>Hochgradig von Namenskonventionen abhaengig</td><td>Texte sind reine Daten-Assets und bleiben vom Code getrennt</td></tr>
+                    <tr><td>Kollisionsrisiko</td><td>Hohe Gefahr bei grossen Teams</td><td>Minimal dank eindeutiger hexadezimaler IDs</td></tr>
+                    <tr><td>Refactoring</td><td>Schluessel sitzen gleich im Code</td><td>Tokens bleiben stabil waehrend des Lifecycles</td></tr>
+                    <tr><td>Speichereffizienz</td><td>Variabel durch lange Pfadnamen</td><td>Optimiertes Hashing & vorhersehbare Lookups</td></tr>
+                </tbody>
+            </table>
+            <p>Die abstrakte Trennung erlaubt Entwicklern, nur mit Tokens zu arbeiten, waehrend Redaktionsteams die Inhalte in UTF-8-Katalogdateien pflegen. Das C-ABI sorgt dafuer, dass diese Architektur unternehmensweit stabil bleibt.</p>
+            <h3>Universelles C-ABI & Plattform-Linking</h3>
+            <p>Extern "C" verhindert Name-Mangling und ermoeglicht, dass C#, Python oder Rust das Binärartefakt ohne Abhaengigkeiten laden. Die angepassten Artefakte:</p>
+            <ul>
+                <li><strong>Windows:</strong> i18n_engine.dll ohne VCRuntime-Abhaengigkeiten fuer einfaches XCopy-Deployment.</li>
+                <li><strong>Linux:</strong> libi18n_engine.so zur Integration in Shared-Library-Pfade.</li>
+            </ul>
+            <h3>Architektur-Checkliste</h3>
+            <ul class="checklist">
+                <li>Ist ein C++17-kompatibler Compiler (GCC/Clang/MSVC) verfuegbar?</li>
+                <li>Steht Make fuer die Automatisierung bereit?</li>
+                <li>Passt die Calling Convention zum extern "C" Interface?</li>
+                <li>ISt UTF-8 durchgaengig in der Toolchain?</li>
+            </ul>
+            <h3>API-Lifecycle & Safe Loading</h3>
+            <p>Der API-Lifecycle reicht von Instanziierung bis zur Laufzeitdiagnose (i18n_api.h). Der Strict Mode (strict=1) ist in Dev und QA ein Muss: Syntaxprobleme werden sofort abgefangen und koennen sich nicht in produktive Binaries einschleichen.</p>
+            <p>Kataloge folgen einem zeilenbasierten Format, und Tokens werden mit <code>i18n_new_token.py</code> erzeugt. Inline-Referenzen, Escapes (
+, @@, \) und Platzhalter (%0/%1) werden konsequent validiert via <code>i18n_check</code>.</p>
+            <h3>Double-Call Translation Pattern</h3>
+            <p>Um speichersichere Uebersetzungen zu garantieren, ruft man <code>i18n_translate</code> zuerst mit <code>out_buf=null</code> auf, ermittelt die genaue Laenge und fuehrt dann den zweiten Aufruf mit einem vom eigenen Heap allozierten Puffer aus.</p>
+<h3>Qualitaet & Workflow</h3>
+            <p>Die Pipeline folgt Validate → Encrypt → Deploy:</p>
+            <ol>
+                <li><strong>Validate:</strong> <code>i18n_qa.py</code> (intern <code>i18n_check</code>) stoppt bei Fehlern.</li>
+                <li><strong>Encrypt:</strong> <code>i18n_crypt.py</code> schuetzt die Asset-Dateien.</li>
+                <li><strong>Deploy:</strong> Verteilt verschluesselte, validierte Kataloge.</li>
+            </ol>
+            <h3>Best Practices</h3>
+            <ul>
+                <li>Deterministische Builds: die Engine liefert sortierte Ausgaben, ideal fuer Versionskontrolle.</li>
+                <li>Strict Mode immer anwenden (Dev/QA).</li>
+                <li>Zweistufiges Puffer-Management: erst <code>out_buf=NULL</code>, dann Allokation.</li>
+                <li>Token-Erzeugung via <code>i18n_new_token.py</code> automatisieren.</li>
+                <li>Wrapper in verwalteten Sprachen implementieren IDisposable/Context-Manager fuer <code>i18n_destroy</code>.</li>
+            </ul>
+            <h3>Pluralformen & Binärformat</h3>
+            <p>Für internationale Releases erstellt ihr Token-Varianten (<code>{one}</code>, <code>{other}</code>, ...) und steuert sie über die neue API <code>i18n_translate_plural</code>. Die finale Auslieferung läuft über das Binärformat mit Magic-Header: keine lineare Text-Parsingschicht, keine XOR-Heuristik, sondern deterministischer Lookup.</p>
+            <ul class="checklist">
+                <li>Plural-Token definieren: <code>a1b2c3{one}</code> vs. <code>a1b2c3{other}</code>.</li>
+                <li>QA → <code>i18n_translate_plural</code> in Abenteuer-Logik eindeutige Count-Werte liefern.</li>
+                <li>Binary Export: <code>python i18n_crypt.py --strict locales/de.txt releases/de.i18n</code>.</li>
+                <li>Release-Artifact: Magic Header + Version + CRC32 + String Table + Indizes.</li>
+            </ul>
+        </section>
+        <section id="review-plan" class="card reveal" style="--delay: 0.53s;">
+            <h2>Review & Freeze Plan</h2>
+            <p>Die Basis ist fertig: deterministische Lookups, Inline-Komposition, Meta-Header, QA-Checks, Puffer-Handling und das Binary-Release wurden bereits umgesetzt. Jetzt sichern wir den Status mit einem klaren Freeze.</p>
+            <ul class="checklist">
+                <li><strong>Architektur-Status:</strong> C-ABI + Length-First Pattern, Shared Libraries, QA-Logs, Meta-Header und `RESULT_TOO_LARGE`-Guards sind stabil umgesetzt.</li>
+                <li><strong>Endgültige Fixes:</strong> Meta-Werte (inkl. `note`) via API sichtbar, Plural-Regeln (DEFAULT/SLAVIC/ARABIC), deterministischer Binary-Header und Overflow-Guard sind Teil der finalen Spezifikation.</li>
+                <li><strong>Freeze-Aktion:</strong> Änderungen nur mit aktualisiertem `CONTRACT.md`, validiert durch `tests/run_tests.py` (Meta + QA + Overflow + Escape-Checks).</li>
+            </ul>
+            <p>Vor jeder neuen Release-Iteration: Contract lesen → `tests/run_tests.py` ausführen → Artefakte exportieren. So bleibt die Engine industrial-strength und dokumentiert.</p>
+        </section>
+        <section id="hint" class="card reveal" style="--delay: 0.54s;">
+            <h2>Hinweis</h2>
+            <p>Warum ich dieses System entwickelt habe. In den letzten Jahren habe ich in beinahe allen Bereichen programmiert und ständig mit Texten gearbeitet – Fehlermeldungen, Hinweise, komplette GUI-Strings. Immer wieder stellte sich nach langer Logikarbeit heraus: Der Text passt nicht, er muss geändert werden.</p>
+            <p>Wenn ich wie heute an mehreren Projekten gleichzeitig arbeite, kommt genau hier der große Aufwand: wieder in den Code einlesen, die passenden Textstellen identifizieren, nach Referenzen suchen, ändern, hoffen, dass Tests sauber laufen, und dann sofort ins nächste Projekt springen. Ich war dann für eine Weile aus dem vorherigen Projekt herausgerissen und musste mich erneut einarbeiten.</p>
+            <p>Wenngleich das im Alltag normal erscheint, wurde es mit der Zeit frustrierend, gerade wenn man gleichzeitig mehrere Projekte betreibt. Aus diesem Antrieb heraus entstand die i18n Engine: Texte werden zu unabhängigen Daten-Assets, Änderungen sind schnell und sicher möglich, ohne dass man ständig zwischen Projektkontexten pendeln muss.</p>
+        </section>
+        <section id="concept" class="card reveal" style="--delay: 0.5s;">
+            <h2>Konzept-Übersicht: Die Token-basierte i18n-Engine</h2>
+            <p>Die Engine ist eine Native C++17-Lösung ohne externe Abhaengigkeiten. Sie ist speichersicher, deterministisch und behandelt Texte als Daten-Assets mit stabilen Tokens.</p>
+            <div class="detail-table">
+                <thead><tr><th>Kriterium</th><th>Klassische Keys</th><th>Hex-Tokens</th></tr></thead>
+                <tbody>
+                    <tr><td>Code-Stabilität</td><td>Schluesselstruktur erzwingt Refactorings</td><td>Tokens bleiben konstant</td></tr>
+                    <tr><td>Änderungs-Resilienz</td><td>Redaktion kann Logik verletzen</td><td>Texte sind getrennt, Logik bleibt unveraendert</td></tr>
+                    <tr><td>Trennung (SoC)</td><td>Semantik mischt sich mit Technik</td><td>Vollständige Entkopplung von ID und Inhalt</td></tr>
+                </tbody>
+            </div>
+            <p>Tokenzeilen (z. B. <code>4f2a91 (Welcome_Msg) Herzlich willkommen!</code>) bestehen aus Token, optionalem Label und Text. Escapes (@, @@, 
+, 	, 
+, \) und Rekursion werden kontrolliert.</p>
+            <h3>Ergaenzendes Glossar</h3>
+            <ul>
+                <li><strong>Inline-Referenzen (@TOKEN):</strong> Dynamisches Einbetten anderer Textbausteine.</li>
+                <li><strong>Platzhalter (%0, %1):</strong> Dienen der Laufzeit-Injektion von Variablen.</li>
+                <li><strong>Cycle-Detection/Tiefenlimit:</strong> Verhindert Endlosschleifen und Stack-Überlaeufe.</li>
+            </ul>
+            <h3>Schnellstart-Checkliste</h3>
+            <ul class="checklist">
+                <li>UTF-8 ohne BOM</li>
+                <li>Tokens sind 6–32 Zeichen hexadezimal</li>
+                <li>Labels in runden Klammern, optional</li>
+                <li>Text umfasst alles bis Zeilenende</li>
+                <li>Literal @ als @@ maskiert</li>
+                <li>Rekursion flach und zyklusefrei</li>
+                <li>i18n_qa.py laeuft ohne ERROR</li>
+                <li>Strict Mode (strict=1) validiert Katalog vor Freigabe</li>
+            </ul>
+        </section>
+                        <section id="comparison-quiz" class="card quiz-container reveal" style="--delay: 0.54s;">
+            <h2>Mini-Quiz: gettext vs. i18Token</h2>
+            <p>Teste dein Verständnis zum Vergleich der beiden Lokalisierungssysteme.</p>
+            <div>
+                <p><strong>Frage 1:</strong> Welche Lösung liefert deterministische, sortierte Ausgaben ohne zusätzliche Toolchain?</p>
+                <label class="quiz-option"><input type="radio" name="comp1" value="a"> A) GNU gettext mit msgfmt/.mo-Dateien</label>
+                <label class="quiz-option"><input type="radio" name="comp1" value="b"> B) i18Token mit hexadezimalen Tokens und C++-Core</label>
+                <label class="quiz-option"><input type="radio" name="comp1" value="c"> C) Beide gleich, weil sie C-Strings verwenden</label>
+
+                <p><strong>Frage 2:</strong> Welche Lösung erfordert das zweistufige Puffer-Management (out_buf=NULL)?</p>
+                <label class="quiz-option"><input type="radio" name="comp2" value="a"> A) GNU gettext</label>
+                <label class="quiz-option"><input type="radio" name="comp2" value="b"> B) Keines von beiden</label>
+                <label class="quiz-option"><input type="radio" name="comp2" value="c"> C) i18Token Translate-API</label>
+
+                <button class="btn" onclick="checkComparisonQuiz()">Antworten prüfen</button>
+                <p id="comparison-result"></p>
+            </div>
+        </section>
+<section id="comparison" class="card reveal" style="--delay: 0.52s;">
+            <h2>Vergleich zur klassischen GNU gettext-Architektur</h2>
+            <p>Zum besseren Verständnis der Token-Philosophie vergleichen wir sie mit dem etablierten GNU gettext-Workflow.</p>
+            <table class="detail-table">
+                <thead>
+                    <tr><th>Kriterium</th><th>GNU gettext</th><th>i18Token</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>ID-Philosophie</td><td>Semantische Schlüssel / Domain-Namen (.po-Dateien)</td><td>Stabile hexadezimale Tokens (6–32 Zeichen) ohne semantischen Bezug</td></tr>
+                    <tr><td>Build & Deployment</td><td>Übersetzung → msgfmt → .mo binär, abhängig von gettext-Tools</td><td>Direkte Token-Lookups über den C++-Core, keine externe Toolchain notwendig</td></tr>
+                    <tr><td>Interoperabilität</td><td>Bindung an die gettext-API mit standardisierten C-Funktionen</td><td>Universelles extern "C" ABI, leicht integrierbar in C#, Python, Rust</td></tr>
+                    <tr><td>QA & Validierung</td><td>Prüfung oft manuell, keine Cycle-Checks</td><td>i18n_check erkennt Missing-References, Cycles und Placeholder-Gaps automatisch</td></tr>
+                    <tr><td>Speichermanagement</td><td>Strings als C-Strings, oft zusätzliche Wrapper nötig</td><td>Double-Call-Pufferstrategie verhindert Cross-Heap-Allokation</td></tr>
+                    <tr><td>Pluralformen & Release</td><td>ngettext + msgfmt/.mo + separate Binary-Tools</td><td>i18n_translate_plural + i18n_export_binary (i18n_crypt)</td></tr>
+                    <tr><td>Meta & Guard</td><td>.po/.mo fehlen strukturierte Meta-Infos und Overflow-Warnungen</td><td>Meta-Header (`@meta locale/fallback/plural/note`) wandert in das Binärformat, APIs lesen die Werte, Overflow liefert `RESULT_TOO_LARGE` via `i18n_last_error_copy`.</td></tr>
+                </tbody>
+            </table>
+            <p>Die gettext-Kette bleibt string-zentriert; i18Token macht Lokalisierung zum datenbasierten Service mit performance-optimierten Lookups und starker Validierung.</p>
+        </section>
+        <section id="roadmap" class="card reveal" style="--delay: 0.56s;">
+            <h2>Roadmap: Pluralformen & Binärformate</h2>
+            <p>Die nächsten Schritte weiten das Subsystem auf echte Industrie-Szenarien aus.</p>
+            <h3>1. Pluralformen</h3>
+            <ol>
+                <li>Token-Syntax erweitern um <code>token{one}</code>/<code>token{other}</code> oder <code>key(shape)</code>-Varianten.</li>
+                <li>Neue API <code>i18n_translate_plural(token,count,args)</code> mit CLDR-artigen Regeln (beginnend bei simple plural/other).</li>
+                <li>QA erweitert um Plausibilitätsprüfungen für Plural-Token.</li>
+            </ol>
+            <h3>2. Binäres Release-Format</h3>
+            <table class="detail-table">
+                <thead>
+                    <tr><th>Layer</th><th>Inhalt</th><th>Nutzen</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Header</td><td>Magic Tag, Version, Flags (plural support, checksum)</td><td>Deterministische Validierung + Schutz vor falschen XOR-Heuristiken</td></tr>
+                    <tr><td>String Table</td><td>Token IDs + Offsets, Hash-Index</td><td>Super schnelle Lookups ohne Parsen</td></tr>
+                    <tr><td>Checksum</td><td>CRC32 oder SHA1 über TXT-Quelle</td><td>Integritätsprüfung in CI</td></tr>
+                </tbody>
+            </table>
+            <p>Texte bleiben weiterhin im TXT-Katalog editierbar, aber Releases verwenden das binäre Format; so kombinieren wir Editierbarkeit mit Produktionsperformance.</p>
+        </section>
+<section id="quiz" class="card quiz-container reveal" style="--delay: 0.5s;">
+            <h2>Quick-Check Quiz</h2>
+            <div id="quiz-panel">
+                <p><strong>Frage 1:</strong> Wofuer steht FFI?</p>
+                <label class="quiz-option"><input type="radio" name="q1" value="a"> A) Fast File Import</label>
+                <label class="quiz-option"><input type="radio" name="q1" value="b"> B) Foreign Function Interface</label>
+                <label class="quiz-option"><input type="radio" name="q1" value="c"> C) Format Field Index</label>
+
+                <p><strong>Frage 2:</strong> Welche Aussage zur Architektur stimmt?</p>
+                <label class="quiz-option"><input type="radio" name="q2" value="a"> A) Logik und Texte liegen im selben Python-File.</label>
+                <label class="quiz-option"><input type="radio" name="q2" value="b"> B) Textkatalog ist getrennt, Python nutzt nur Tokens.</label>
+                <label class="quiz-option"><input type="radio" name="q2" value="c"> C) Token-IDs veraendern sich pro Sprache.</label>
+
+                <p><strong>Frage 3:</strong> Was bedeutet <code>ERROR CYCLE</code>?</p>
+                <label class="quiz-option"><input type="radio" name="q3" value="a"> A) DLL konnte nicht geladen werden.</label>
+                <label class="quiz-option"><input type="radio" name="q3" value="b"> B) Tokens referenzieren sich in einer Schleife.</label>
+                <label class="quiz-option"><input type="radio" name="q3" value="c"> C) Platzhalter sind nicht erlaubt.</label>
+
+                <p><strong>Frage 4:</strong> Welche Regel gilt fuer Platzhalter?</p>
+                <label class="quiz-option"><input type="radio" name="q4" value="a"> A) Nummern muessen lueckenlos sein (%0, %1, %2).</label>
+                <label class="quiz-option"><input type="radio" name="q4" value="b"> B) Nur %9 ist erlaubt.</label>
+                <label class="quiz-option"><input type="radio" name="q4" value="c"> C) Platzhalter werden automatisch ignoriert.</label>
+
+                <p><strong>Frage 5:</strong> Warum muessen DLL und Python die gleiche Architektur haben?</p>
+                <label class="quiz-option"><input type="radio" name="q5" value="a"> A) Sonst funktioniert der Speicherzugriff nicht.</label>
+                <label class="quiz-option"><input type="radio" name="q5" value="b"> B) Weil UTF-8 das verlangt.</label>
+                <label class="quiz-option"><input type="radio" name="q5" value="c"> C) Weil Tokens sonst geaendert werden.</label>
+
+                <br>
+                <button class="btn" onclick="checkQuiz()">Quiz auswerten</button>
+                <p id="quiz-result"></p>
+            </div>
+        </section>
+
+        <div id="cert" class="certificate reveal" style="--delay: 0.55s;">
+            <h1 style="color: #c39a2b; font-size: 3rem; margin-top: 0;">ZERTIFIKAT</h1>
+            <p>Hiermit wird bestaetigt, dass</p>
+            <h2 id="student-name" style="color: #333; border: none;">[DEIN NAME]</h2>
+            <p>den Kurs <strong>i18nToken Engine Junior Developer</strong> erfolgreich abgeschlossen hat.</p>
+            <p><em>Datum: 30. Januar 2026</em></p>
+            <p style="margin-top: 30px; font-weight: bold; border-top: 1px solid #333;">Verifiziert durch CipherCore i18n-Core CEO Ralf Kruemmel</p>
+        </div>
+    </main>
+</div>
+
+<footer>
+    <p>&copy; 2026 CipherCore Academy | i18Core Professional Training Suite</p>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+<script>
+    const moduleMeta = [
+        {
+            id: 1,
+            name: 'Lernziele & Kompetenzen',
+            discipline: 'Kompetenzen',
+            focus: 'Output: Text-Adventure mit QA-Report ohne Errors.',
+            action: 'Schreibe den Zielkatalog und notiere, wie die drei Kompetenzbereiche abgedeckt werden.'
+        },
+        {
+            id: 2,
+            name: 'Was ist die Engine?',
+            discipline: 'Architektur',
+            focus: 'Verstaendnis von Token statt Klartext.',
+            action: 'Erkläre einem Peers, warum Tokens stabil bleiben und wieso Uebersetzer ohne Code arbeiten.'
+        },
+        {
+            id: 3,
+            name: 'Architektur: Logik vs. Katalog',
+            discipline: 'Architektur',
+            focus: 'Schichtenmodell (Python vs. TXT).',
+            action: 'Skizziere die Schichten und markiere, wo die Schnittstellen liegen.'
+        },
+        {
+            id: 4,
+            name: 'Shared Library & FFI',
+            discipline: 'Technisch',
+            focus: 'DLL/SO, ctypes und Architektur-Alignment.',
+            action: 'Teste das Laden der DLL und dokumentiere fehlende Abhaengigkeiten.'
+        },
+        {
+            id: 5,
+            name: 'Katalog-Format & Regeln',
+            discipline: 'Qualitaet',
+            focus: '@-Referenzen und Platzhalterkonventionen.',
+            action: 'Ergaenze eine neue Raum-Beschreibung mit %0/%1 und pruefe die Nummerierung.'
+        },
+        {
+            id: 6,
+            name: 'QA Logs & Fehlersuche',
+            discipline: 'Qualitaet',
+            focus: 'Report-Analyse (CYCLE/MISSING/WARN).',
+            action: 'Finde bekannte ERRORs im QA Report und dokumentiere die Ursache.'
+        },
+        {
+            id: 7,
+            name: 'Python API',
+            discipline: 'Technisch',
+            focus: 'ctypes-Wrapper und strict-Flag.',
+            action: 'Implementiere einen API-Test mit strict=True und protokolliere das Feedback.'
+        },
+        {
+            id: 8,
+            name: 'Bug-Hunter Challenge',
+            discipline: 'Qualitaet',
+            focus: 'Fehlerentdeckung und Zertifikat-Begruendung.',
+            action: 'Behebe die Challenge, laufe den QA-Report und hol dir dein Zertifikat.'
+        },
+        {
+            id: 9,
+            name: 'Pluralformen & Release',
+            discipline: 'Release',
+            focus: 'Plural-Token + binärer Export via i18n_crypt.',
+            action: 'Definiere {one}/{other}-Tokens, teste mit i18n_translate_plural und exportiere das Release-Binärformat.'
+        }
+    ];
+
+    const dashboardDefaults = {
+        progress: 68,
+        modules: [1, 2, 3, 4],
+        score: 'A-'
+    };
+
+    const badgeRules = [
+        { id: 'token-architect', label: 'Token Architect', requires: (state) => state.modules.length >= 2 },
+        { id: 'qa-hunter', label: 'QA Hunter', requires: (state) => state.modules.includes(6) },
+        { id: 'api-integrator', label: 'API Integrator', requires: (state) => state.modules.includes(7) },
+        { id: 'release-master', label: 'Release Master', requires: (state) => state.modules.includes(9) },
+        { id: 'localization-pro', label: 'Localization Pro', requires: (state) => state.progress >= 60 },
+        { id: 'certified', label: 'Certified Core', requires: (state) => state.progress >= 90 }
+    ];
+
+    const storageKey = 'ciphercore-dashboard';
+    const totalModules = moduleMeta.length;
+
+    const progressRange = document.getElementById('progress-range');
+    const progressFill = document.getElementById('progress-fill');
+    const statProgress = document.getElementById('stat-progress');
+    const statModules = document.getElementById('stat-modules');
+    const statScore = document.getElementById('stat-score');
+    const moduleChecks = Array.from(document.querySelectorAll('[data-module]'));
+    const scoreSelect = document.getElementById('score-select');
+    const resetBtn = document.getElementById('reset-dashboard');
+    const moduleSummaryEl = document.getElementById('module-summary');
+    const actionItemsEl = document.getElementById('action-items');
+
+    function loadState() {
+        const raw = localStorage.getItem(storageKey);
+        if (!raw) return { ...dashboardDefaults };
+        try {
+            const parsed = JSON.parse(raw);
+            return { ...dashboardDefaults, ...parsed };
+        } catch {
+            return { ...dashboardDefaults };
+        }
+    }
+
+    function saveState(state) {
+        localStorage.setItem(storageKey, JSON.stringify(state));
+    }
+
+    function renderModuleOverview(state) {
+        moduleSummaryEl.innerHTML = moduleMeta
+            .map((module) => {
+                const done = state.modules.includes(module.id);
+                return `<div class="module-card${done ? ' complete' : ''}"><span class="module-status">${module.discipline}</span><span class="module-title">${module.name}</span><span class="module-focus">${module.focus}</span></div>`;
+            })
+            .join('');
+    }
+
+    function renderActionItems(state) {
+        const incomplete = moduleMeta.filter((module) => !state.modules.includes(module.id));
+        if (incomplete.length === 0) {
+            actionItemsEl.innerHTML = '<li>Alle Module abgehakt. Raffiniere deine Tests oder dokumentiere Beobachtungen.</li>';
+            return;
+        }
+        actionItemsEl.innerHTML = incomplete
+            .map((module) => `<li><strong>${module.name}:</strong> ${module.action}</li>`)
+            .join('');
+    }
+
+    function updateBadges(state) {
+        badgeRules.forEach((rule) => {
+            const badge = document.querySelector(`[data-badge="${rule.id}"]`);
+            if (!badge) return;
+            if (rule.requires(state)) {
+                badge.classList.remove('locked');
+            } else {
+                badge.classList.add('locked');
+            }
+        });
+    }
+
+    function updateUI(state) {
+        progressRange.value = state.progress;
+        progressFill.style.width = `${state.progress}%`;
+        statProgress.textContent = `${state.progress}%`;
+        statModules.textContent = `${state.modules.length} / ${totalModules}`;
+        statScore.textContent = state.score;
+        scoreSelect.value = state.score;
+        moduleChecks.forEach((checkbox) => {
+            const moduleId = Number(checkbox.dataset.module);
+            checkbox.checked = state.modules.includes(moduleId);
+        });
+        renderModuleOverview(state);
+        renderActionItems(state);
+        updateBadges(state);
+    }
+
+    function getStateFromUI() {
+        const modules = moduleChecks
+            .filter((checkbox) => checkbox.checked)
+            .map((checkbox) => Number(checkbox.dataset.module));
+        return {
+            progress: Number(progressRange.value),
+            modules,
+            score: scoreSelect.value
+        };
+    }
+
+    function initDashboard() {
+        const state = loadState();
+        updateUI(state);
+
+        progressRange.addEventListener('input', () => {
+            const next = { ...state, progress: Number(progressRange.value) };
+            Object.assign(state, next);
+            updateUI(state);
+            saveState(state);
+        });
+
+        moduleChecks.forEach((checkbox) => {
+            checkbox.addEventListener('change', () => {
+                const next = getStateFromUI();
+                Object.assign(state, next);
+                updateUI(state);
+                saveState(state);
+            });
+        });
+
+        scoreSelect.addEventListener('change', () => {
+            const next = { ...state, score: scoreSelect.value };
+            Object.assign(state, next);
+            updateUI(state);
+            saveState(state);
+        });
+
+        resetBtn.addEventListener('click', () => {
+            Object.assign(state, dashboardDefaults);
+            updateUI(state);
+            saveState(state);
+        });
+    }
+
+    function checkQuiz() {
+        const answers = { q1: 'b', q2: 'b', q3: 'b', q4: 'a', q5: 'a' };
+        let score = 0;
+        Object.keys(answers).forEach((key) => {
+            const selected = document.querySelector(`input[name="${key}"]:checked`)?.value;
+            if (selected === answers[key]) score += 1;
+        });
+        const result = document.getElementById('quiz-result');
+        if (score >= 4) {
+            const name = prompt("Glueckwunsch! Du hast den Quick-Check bestanden. Gib deinen Namen fuer das Zertifikat ein:");
+            if (name) {
+                document.getElementById('student-name').innerText = name;
+                document.getElementById('cert').style.display = 'block';
+                document.getElementById('cert').scrollIntoView({ behavior: 'smooth' });
+            }
+            result.textContent = `Bestanden: ${score} / 5`;
+        } else {
+            result.textContent = `Noch nicht bestanden: ${score} / 5. Bitte wiederhole die Module 3-6.`;
+        }
+    }
+
+    function checkComparisonQuiz() {
+        const answers = { comp1: 'b', comp2: 'c' };
+        let score = 0;
+        Object.keys(answers).forEach((key) => {
+            const selected = document.querySelector(`input[name="${key}"]:checked`)?.value;
+            if (selected === answers[key]) score += 1;
+        });
+        const result = document.getElementById('comparison-result');
+        if (score === 2) {
+            result.textContent = 'Perfekt! Du erkennst den i18Token-Vorteil.';
+        } else if (score === 1) {
+            result.textContent = 'Fast richtig. Schau dir die Unterschiede erneut an.';
+        } else {
+            result.textContent = 'Das war noch nicht richtig. Lies die Gegenüberstellung nochmal.';
+        }
+    }
+
+    initDashboard();
+</script>
+</body>
+</html>

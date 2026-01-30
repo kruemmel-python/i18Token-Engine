@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CipherCore | Lehrer-Guide i18Core</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="page-lehrer">
+<header class="site-header">
+    <div class="brand">
+        <div class="logo-wrap">
+            <img class="logo-mark" src="assets/ciphercore-logo.svg" alt="CipherCore Logo">
+            <div class="logo">CipherCore</div>
+        </div>
+        <div class="brand-sub">i18Core Training</div>
+    </div>
+    <nav class="nav">
+        <a class="nav-link" href="index.html">Uebersicht</a>
+        <a class="nav-link" href="adventure_test.html">Adventure Test</a>
+        <a class="nav-link active" href="lehrer_guide.html">Lehrer-Guide</a>
+        <a class="nav-link" href="hint.html">Hinweis</a>
+        <a class="nav-link" href="docs.html">Documentation</a>
+    </nav>
+    <div class="badge">Cohort 2026</div>
+</header>
+
+<section class="hero reveal" style="--delay: 0.1s;">
+    <h1>Lehrer-Begleitheft</h1>
+    <p>Kurs: Lokalisierung & Text-Adventures mit der i18nToken Engine | CipherCore Academy</p>
+</section>
+
+<div class="layout">
+        <aside class="sidebar reveal" style="--delay: 0.2s;">
+            <h3>Kapitel</h3>
+            <a href="#lernziele">Lernziele</a>
+            <a href="#unterricht">Unterrichtsplan</a>
+            <a href="#release">Release & Plural</a>
+            <a href="#loesungen">Loesungen</a>
+        <a href="#bewertung">Bewertung</a>
+        <a href="#trouble">Troubleshooting</a>
+        <a href="#quiz">Quiz-Key</a>
+    </aside>
+
+    <main>
+        <section id="lernziele" class="card reveal" style="--delay: 0.25s;">
+            <h2>1. Lernziele & Kompetenzen</h2>
+            <ul>
+                <li><strong>Technisch:</strong> Verstaendnis von Shared Libraries (DLL/SO) und FFI (Foreign Function Interface) via <code>ctypes</code>.</li>
+                <li><strong>Architektonisch:</strong> Trennung von Logik (Python) und statischen Ressourcen (TXT-Katalog).</li>
+                <li><strong>Qualitaetssicherung:</strong> Nutzung von Fehlerberichten (QA-Logs) zur Fehlerbehebung in Datenstrukturen.</li>
+            </ul>
+            <p><strong>Lernergebnis:</strong> Schueler koennen eine kleine Story umsetzen, Token-Fehler analysieren und ein sauberes Release erstellen.</p>
+        </section>
+
+        <section id="unterricht" class="card reveal" style="--delay: 0.3s;">
+            <h2>2. Unterrichtsplan (90 Minuten)</h2>
+            <ol>
+                <li><strong>Intro (10 min):</strong> Warum i18n? Trennung von Logik und Sprache.</li>
+                <li><strong>Demo (15 min):</strong> DLL laden, erstes Token uebersetzen.</li>
+                <li><strong>Katalog-Regeln (15 min):</strong> Token, @, %0 Regeln erklaeren.</li>
+                <li><strong>QA-Workshop (15 min):</strong> Fehlerreport lesen und beheben.</li>
+                <li><strong>Adventure-Lab (25 min):</strong> Story erweitern + Challenges.</li>
+                <li><strong>Quiz (10 min):</strong> Zertifizierungs-Quiz.</li>
+            </ol>
+        </section>
+        <section id="release" class="card reveal" style="--delay: 0.325s;">
+            <h2>3. Release & Pluralformen</h2>
+            <p>Zeige den Lehrenden, wie Pluralformen über <code>token{one}</code>/<code>token{other}</code> modelliert werden und wie die Engine via <code>i18n_translate_plural</code> den richtigen Text auswählt.</p>
+            <div class="code-header"><span>Python: translate_plural</span></div>
+            <pre><code class="language-python">item_count = 3
+print(engine.translate_plural("f1e2d3", item_count, ["Schwert"]))</code></pre>
+            <p>Für das Release exportiert ihr den Release-Katalog ins Binärformat:</p>
+            <div class="code-header"><span>Release-Befehl</span></div>
+            <pre><code class="language-bash">python i18n_crypt.py --strict locales/de.txt releases/de.i18n</code></pre>
+            <p>Das neue <code>.i18n</code>-Artefakt enthält Magic Header, Version, Flags, CRC und String-Offsets. Die Engine erkennt das Format automatisch und lädt es ohne Text-Parsen.</p>
+        </section>
+
+        <section id="meta" class="card reveal" style="--delay: 0.335s;">
+            <h2>4a. Meta-Header & Overflow-Hinweise</h2>
+            <p>Erkläre den Lehrlingen, dass die <code>@meta</code>-Zeilen (Locale, Fallback, Plural, Note) ins binäre Release übernommen werden und dass die API die Werte wieder zurückliefert.</p>
+            <ul>
+                <li><strong>Locale & Fallback:</strong> Rückgabe per <code>i18n_get_meta_locale_copy</code> / <code>i18n_get_meta_fallback_copy</code> hilft Feedback-Screens im Spiel, z. B. „Deutsch (Fallback: Englisch)“.</li>
+                <li><strong>Plural Rule:</strong> Mit <code>i18n_get_meta_plural_rule</code> kann die App wissen, welche zählbaren Varianten erwartet werden.</li>
+                <li><strong>Result Overflow:</strong> Jede API gibt <code>-1</code> zurück, wenn die Länge >2GByte ist. Nutze <code>i18n_last_error_copy</code> um <code>RESULT_TOO_LARGE</code> sichtbar zu machen.</li>
+            </ul>
+            <p>In der Praxis können die Schueler diese Informationen nutzen, um Metadaten-Widgets auf der Trainingsseite zu bauen und robuste Fehlerhinweise auszugeben.</p>
+        </section>
+
+        <section id="loesungen" class="card reveal" style="--delay: 0.35s;">
+            <h2>4. Loesungen der Schueler-Challenges</h2>
+            <h3>Challenge A: QA-Meister (Bug-Hunter)</h3>
+            <table class="solution-table">
+                <tr>
+                    <th>Fehlermeldung</th>
+                    <th>Erklaerung fuer Schueler</th>
+                    <th>Loesungsweg</th>
+                </tr>
+                <tr>
+                    <td><code>ERROR CYCLE</code></td>
+                    <td>Zirkulaere Referenz: A ruft B auf, B ruft A auf.</td>
+                    <td>Eine der <code>@</code>-Referenzen entfernen.</td>
+                </tr>
+                <tr>
+                    <td><code>ERROR MISSING</code></td>
+                    <td>Ein Token wird mit <code>@</code> gerufen, existiert aber nicht.</td>
+                    <td>Token-ID pruefen oder in der TXT-Datei anlegen.</td>
+                </tr>
+                <tr>
+                    <td><code>WARN GAP</code></td>
+                    <td>Unregelmaessige Platzhalter (z.B. %0 gefolgt von %2).</td>
+                    <td>Platzhalter lueckenlos nummerieren (%0, %1, %2).</td>
+                </tr>
+            </table>
+            <p><strong>Challenge C:</strong> Zwei Platzhalter muessen lueckenlos gesetzt sein, z.B. <code>500(Action_Use): Du nutzt %0 auf %1.</code></p>
+            <p><strong>Challenge D:</strong> Fehlender Token erzeugt <code>ERROR MISSING</code>. Mit <code>strict=True</code stoppt das Laden sofort und verhindert Folgefehler.</p>
+        </section>
+
+        <section id="bewertung" class="card reveal" style="--delay: 0.4s;">
+            <h2>5. Bewertungskriterien: Das Text-Adventure</h2>
+            <p>Wenn Schueler ihr eigenes "Token Quest" Projekt abgeben, koennen folgende Punkte zur Benotung herangezogen werden:</p>
+            <div class="criteria">
+                <strong>Basispunkte (1-3):</strong>
+                <ul>
+                    <li>Engine wird erfolgreich initialisiert und die Datei geladen.</li>
+                    <li>Mindestens 3 verschiedene Raeume sind als Tokens definiert.</li>
+                    <li>Ein Wechsel zwischen Raeumen ist im Python-Code moeglich.</li>
+                </ul>
+                <strong>Erweiterte Punkte (4-5):</strong>
+                <ul>
+                    <li>Einsatz von Platzhaltern (<code>%0</code>) fuer dynamische Objekte (z.B. Inventar).</li>
+                    <li>Einsatz von Inline-Referenzen (<code>@</code>) zur Text-Verschachtelung.</li>
+                    <li>Sauberer Python-Code (Fehlerbehandlung, falls Datei fehlt).</li>
+                </ul>
+                <strong>Bonus:</strong>
+                <ul>
+                    <li>QA-Report ohne ERROR und ohne WARN.</li>
+                    <li>Mindestens eine zweite Sprache im Katalog.</li>
+                </ul>
+            </div>
+        </section>
+
+        <section id="trouble" class="card reveal" style="--delay: 0.45s;">
+            <h2>6. Haeufige Fehlerquellen (Troubleshooting)</h2>
+            <div class="warning">
+                <ul>
+                    <li><strong>Pfad-Fehler:</strong> Die <code>i18n_engine.dll</code> (oder <code>.so</code>) muss im selben Ordner wie das Python-Skript liegen.</li>
+                    <li><strong>Encoding:</strong> Die <code>.txt</code> Datei muss zwingend als <strong>UTF-8</strong> (ohne BOM fuer beste Kompatibilitaet) gespeichert sein.</li>
+                    <li><strong>Architektur:</strong> Ein 64-Bit Python benoetigt eine 64-Bit DLL. Bei Fehlermeldungen wie "Win32 error" liegt meist ein Architektur-Mismatch vor.</li>
+                    <li><strong>QA-Report:</strong> Fehler zuerst im Katalog beheben, nicht im Python-Code herumprobieren.</li>
+                </ul>
+            </div>
+        </section>
+
+        <section id="system-guide" class="card reveal" style="--delay: 0.45s;">
+            <h2>System-Integrationsleitfaden</h2>
+            <p>Die i18Token-Engine setzt auf Zero Dependencies, C++17 und ein sauberes extern "C" ABI. Dadurch laesst sie sich in C#, Python, Rust oder Node.js integrieren ohne Name-Mangling.</p>
+            <ul>
+                <li><strong>C++17 Standard:</strong> Modernste Sprachfeatures fuer deterministische Performance.</li>
+                <li><strong>Zero Dependencies:</strong> Nur STL – kein DLL-Himmel.</li>
+                <li><strong>C-ABI:</strong> Nahtlose FFI-Anbindung fuer verschiedene Sprachen.</li>
+                <li><strong>Robustheit:</strong> Cycle-Detection und sortierte Ausgaben fuer CI.</li>
+            </ul>
+            <h3>Architektur-Check</h3>
+            <ul class="checklist">
+                <li>Ist ein C++17-kompatibler Compiler vorhanden (GCC/Clang/MSVC)?</li>
+                <li>Steht Make fuer automatisierte Builds zur Verfuegung?</li>
+                <li>Stimmen Calling Convention und strict UTF-8-Toolchain?</li>
+            </ul>
+            <h3>Artefakte & Workflow</h3>
+            <ul>
+                <li><strong>Windows:</strong> i18n_engine.dll (kein VCRuntime-Dependency) fuer einfaches XCopy-Deployment.</li>
+                <li><strong>Linux:</strong> libi18n_engine.so fuer standardkonforme Integration.</li>
+            </ul>
+            <p>Pipeline: Validate (i18n_qa.py) → Encrypt (i18n_crypt.py) → Deploy. Strict Mode (strict=1) verhindert, dass korruptes Material in Binaries gelangt und schützt vor Laufzeitproblemen.</p>
+        </section>
+        <section id="concept-overview" class="card reveal" style="--delay: 0.5s;">
+            <h2>Konzept-Übersicht für Lehrende</h2>
+            <p>Tokens (6–32 hex) erlauben die getrennte Pflege von Code und Inhalt. Labels sind optional, Text folgt nach dem Token und kann @-Referenzen, Platzhalter (%0) sowie Escapes (
+, 	, @@) enthalten.</p>
+            <table class="detail-table">
+                <thead><tr><th>Kriterium</th><th>Semantische Keys</th><th>Hex-Tokens</th></tr></thead>
+                <tbody>
+                    <tr><td>Stabilität</td><td>Keys muessen u.U. bei Refactoring angepasst werden.</td><td>Tokens bleiben stabil und verhindern Code-Änderungen.</td></tr>
+                    <tr><td>Separation of Concerns</td><td>Redaktion arbeitet nahe an der Logik.</td><td>Logs/Redaktion sind reine Daten, Entwickler arbeiten nur mit IDs.</td></tr>
+                    <tr><td>Validierung</td><td>Weniger Werkzeuge.</td><td>i18n_check + Strict Mode garantieren Konsistenz.</td></tr>
+                </tbody>
+            </table>
+            <h3>Didaktischer Fokus</h3>
+            <ul>
+                <li>Erklaere die zwei-stufige <code>i18n_translate</code>-Verwendung (out_buf=NULL → Allokation → zweiter Aufruf).</li>
+                <li>Zeige die Wirkung von Cycle-Detection und Placeholder-Gaps anhand kleiner Beispieldateien.</li>
+                <li>Nutze <code>i18n_new_token.py</code> zur sicheren Token-Erzeugung.</li>
+            </ul>
+                    <h3>Operational Best Practices</h3>
+            <ul class="checklist">
+                <li>Strict Mode (strict=1) zwingend in Dev und QA, um Schemafehler sofort zu erkennen.</li>
+                <li>i18n_check als Quality Gate in der Pipeline, deterministische Ausgaben vereinfachen Diffs.</li>
+                <li>Double-Call-Pattern (out_buf=NULL → Größe ermitteln → zweite Call mit eigenem Puffer) fuer speichersichere Translation.</li>
+                <li>Token-Erzeugung klar reglementieren: nur <code>i18n_new_token.py</code>, keine manuellen hex-Werte.</li>
+            </ul>
+            <p>Durch diese operationalen Leitplanken entsteht eine Lokalisierungsebene, die sowohl performant als auch langfristig wartbar bleibt.</p>
+</section>
+        <section id="freeze-plan" class="card reveal" style="--delay: 0.52s;">
+            <h2>Review & Freeze Plan</h2>
+            <p>Die Engine wurde auf Industry-Level fertiggestellt: deterministische C-ABI, Metadaten, QA-Logs, Overflow-Guards und Binary-Releases sind implementiert. Der nächste Schritt ist ein harter Freeze.</p>
+            <ul class="checklist">
+                <li>Alle finalen Fixes (Meta Header inkl. Note, DEFAULT/SLAVIC/ARABIC Plural-Regeln, `RESULT_TOO_LARGE`-Hinweis, deterministischer Header) sind Bestandteil der Spezifikation.</li>
+                <li>Jede Änderung am Core passiert mit aktualisiertem <code>CONTRACT.md</code>; die Datei beschreibt ABI, Binary, Language Spec und den Freeze-Prozess.</li>
+                <li>Bevor ein Release erzeugt wird, laufen die Golden Tests (`tests/run_tests.py`) zur Verifikation von Meta-Infos, QA, Escape-Verhalten und Overflow-Fehlern.</li>
+            </ul>
+            <p>Dokumentieren Sie Änderungen, führen Sie die Golden Tests aus, und exportieren Sie dann das Artefakt – erst danach ist der Kurs „in Stein gemeißelt“.</p>
+        </section>
+        <section id="comparison" class="card reveal" style="--delay: 0.52s;">
+            <h2>Vergleich mit GNU gettext</h2>
+            <p>Zum Aufzeigen der Architektur-Entscheidung vergleichen wir die klassische gettext-Pipeline mit unserer tokenbasierten Engine.</p>
+            <table class="detail-table">
+                <thead>
+                    <tr><th>Kriterium</th><th>GNU gettext</th><th>i18Token</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>ID-Philosophie</td><td>Semantische Schlüssel (.po)</td><td>Hexadezimale Tokens (6–32 Zeichen)</td></tr>
+                    <tr><td>Build</td><td>PO → msgfmt → MO</td><td>Direkter Native-Lookup, keine externe Toolchain</td></tr>
+                    <tr><td>QA</td><td>Manuelle Prüfungen, keine Cycle-Erkennung</td><td>i18n_check erkennt Missing-Refs, Cycles, Placeholder-Gaps</td></tr>
+                    <tr><td>Interop</td><td>Standard C-API innerhalb gettext</td><td>Extern "C" ABI, FFI-freundlich für C#, Python, Rust</td></tr>
+                    <tr><td>Memory</td><td>C-Strings, Portierbarkeit durch Wrapper</td><td>Double-Call-Pufferstrategie ohne Cross-Heap-Allokation</td></tr>
+                </tbody>
+            </table>
+            <p>Die gettext-Toolchain eignet sich fuer einfache stringbasierte Lokalisierung; i18Token bietet dagegen deterministische Performance, automatisierte Validierung und Enterprise-Fokus.</p>
+        </section>
+        <section id="roadmap" class="card reveal" style="--delay: 0.55s;">
+            <h2>Roadmap für Architektur-Upgrades</h2>
+            <p>Die beiden Prioritäten, die die Engine wirklich auf Industrielevel heben, sind Pluralformen und ein deterministisches Binär-Release.</p>
+            <ul class="checklist">
+                <li>Pluralsyntax mit <code>token{one}</code>/<code>token{other}</code> und optionaler Locale-Konfiguration.</li>
+                <li>Neue Übersetzungsroutine <code>i18n_translate_plural</code> mit CLDR-Regeln.</li>
+                <li>QA: Plural-Tokens in den Cycle-/Missing-Checks berücksichtigen.</li>
+                <li>TXT-Editor bleibt Quelle, Release-Tasks wandeln in Binärformat mit Magic Header + Hash.</li>
+                <li>Binärer Loader (Header + String Table + Indizes) ersetzt die XOR-Heuristik und liefert O(1)-Lookups.</li>
+            </ul>
+            <p>Fusst du auf diesen Erweiterungen, bist du in der Lage, Gettext-Funktionen wie ngettext/Pluralhandling plus hohe Release-Performance vollständig zu ersetzen – und gleichzeitig die QA-Story zu wahren.</p>
+        </section>
+        <section id="quiz" class="card reveal" style="--delay: 0.5s;">
+            <h2>7. Quiz-Aufloesung (Master-Key)</h2>
+            <ol>
+                <li><strong>Frage 1:</strong> B (Inline-Referenz auf anderen Token)</li>
+                <li><strong>Frage 2:</strong> B (Striktes Laden bricht bei Fehlern ab)</li>
+                <li><strong>Frage 3:</strong> B (ctypes Modul)</li>
+                <li><strong>Frage 4:</strong> A (Warnung bei Platzhalter-Luecke)</li>
+                <li><strong>Frage 5:</strong> B (Katalog -> Logik -> QA)</li>
+                <li><strong>Frage 6:</strong> A (Stabile Token fuer Lokalisierung)</li>
+            </ol>
+        </section>
+    </main>
+</div>
+
+<footer>
+    <p>&copy; 2026 CipherCore Academy | Lehrmaterial i18Core</p>
+</footer>
+</body>
+</html>

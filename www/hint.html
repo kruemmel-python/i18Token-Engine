@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hinweis | CipherCore i18nToken Engine</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="page-hint">
+<header class="site-header">
+    <div class="brand">
+        <div class="logo-wrap">
+            <img class="logo-mark" src="assets/ciphercore-logo.svg" alt="CipherCore Logo">
+            <div class="logo">CipherCore</div>
+        </div>
+        <div class="brand-sub">i18Core Insight</div>
+    </div>
+    <nav class="nav">
+        <a class="nav-link" href="index.html">Uebersicht</a>
+        <a class="nav-link" href="adventure_test.html">Adventure Test</a>
+        <a class="nav-link" href="lehrer_guide.html">Lehrer-Guide</a>
+        <a class="nav-link active" href="hint.html">Hinweis</a>
+    </nav>
+    <div class="badge">Cohort 2026</div>
+</header>
+
+<main class="hint-layout">
+    <section class="hero">
+        <h1>Textänderungen ohne Kontextwechsel</h1>
+        <p class="hero-subtitle">
+            Eine tokenbasierte i18n Engine, die Texte vom Code entkoppelt
+            und mentale Projektwechsel eliminiert.
+        </p>
+        <div class="hero-cta">
+            <a href="#problem" class="btn-primary">Warum dieses System</a>
+            <a href="docs.html" class="btn-secondary">Design ansehen</a>
+        </div>
+    </section>
+
+    <section id="problem" class="card">
+        <h2>Das eigentliche Problem ist kein i18n-Problem</h2>
+        <p>
+            In nahezu allen Softwareprojekten sind Texte allgegenwärtig:
+            UI-Strings, Logs, Fehlermeldungen, Tooltips, CLI-Ausgaben.
+        </p>
+        <p>
+            In der Praxis zeigt sich jedoch ein wiederkehrendes Muster:
+            Texte wirken im Code korrekt – ihre Qualität offenbart sich
+            erst in der realen Nutzung.
+        </p>
+        <blockquote>
+            Der Aufwand entsteht nicht durch die Textänderung selbst, sondern
+            durch den erzwungenen Kontextwechsel.
+        </blockquote>
+    </section>
+
+    <section class="card cycle">
+        <h2>Der klassische Text-Änderungszyklus</h2>
+        <ol class="cycle-list">
+            <li>Projekt ist im Flow</li>
+            <li>Text wirkt im Code korrekt</li>
+            <li>In UI / Log / Fehlersituation passt der Text nicht</li>
+            <li>Projekt erneut öffnen und einlesen</li>
+            <li>Textstelle lokalisieren (UI, Logs, Exceptions, CLI, Docs)</li>
+            <li>Referenzen prüfen, ändern, bauen, testen</li>
+            <li>Rückkehr zu anderem Projekt – Kontext erneut aufbauen</li>
+        </ol>
+        <p class="cycle-note">
+            Jeder Durchlauf zerstört den mentalen Projekt-Cache.
+        </p>
+    </section>
+
+    <section class="card core-problem">
+        <h2>Kognitiver Overhead skaliert schlecht</h2>
+        <p>Dieser Mechanismus wirkt zunächst harmlos, skaliert aber nicht:</p>
+        <ul>
+            <li>Mehr Projekte → mehr Kontextwechsel</li>
+            <li>Mehr Texte → höhere Änderungsfrequenz</li>
+            <li>Mehr Iteration → weniger Fokus</li>
+        </ul>
+        <p>
+            Textpflege wird damit zu einem produktiven Störfaktor,
+            obwohl sie fachlich trivial ist.
+        </p>
+    </section>
+
+    <section class="card assumption">
+        <h2>Grundannahme</h2>
+        <blockquote class="big-quote">
+            Text ist kein Code –<br>
+            aber er lebt im Code.
+        </blockquote>
+        <p>
+            Text ist Teil von User Experience, Semantik und Diagnose.
+            Er ist kein statisches Beiwerk, sondern ein iterativer Bestandteil
+            moderner Software.
+        </p>
+    </section>
+
+    <section id="approach" class="card">
+        <h2>Architekturentscheidung</h2>
+        <p>Die i18n Token Engine basiert auf einer klaren Trennung:</p>
+        <ul>
+            <li>Code referenziert ausschließlich stabile Token-IDs</li>
+            <li>Texte existieren als eigenständige Daten-Assets</li>
+            <li>Textänderungen erfordern keinen Code-Kontext</li>
+        </ul>
+        <p>
+            Dadurch lassen sich Texte iterieren, ohne den Fokus
+            auf die eigentliche Logik zu verlieren.
+        </p>
+    </section>
+
+    <section class="card tokens">
+        <h2>Warum Tokens statt semantischer Schlüssel</h2>
+        <div class="compare">
+            <div>
+                <h3>Semantische Keys</h3>
+                <ul>
+                    <li>instabil</li>
+                    <li>Bedeutung driftet</li>
+                    <li>Naming-Diskussionen</li>
+                    <li>Refactoring-Risiko</li>
+                </ul>
+            </div>
+            <div>
+                <h3>Token-IDs</h3>
+                <ul>
+                    <li>stabil</li>
+                    <li>bedeutungsneutral</li>
+                    <li>keine Diskussionen</li>
+                    <li>keine Codeänderungen</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <section class="card result">
+        <h2>Ergebnis</h2>
+        <ul>
+            <li>Schnellere Textiteration</li>
+            <li>Kein mentaler Kontextverlust</li>
+            <li>Saubere Trennung von Logik und Inhalt</li>
+            <li>Stabilere Builds und Releases</li>
+        </ul>
+        <p>
+            Die Engine ist weniger ein klassisches i18n-Framework,
+            sondern ein Werkzeug zur Reduktion von kognitivem Overhead
+            in komplexen Entwicklungsumgebungen.
+        </p>
+    </section>
+
+    <section class="card cta">
+        <h2>Für Entwickler gebaut, die parallel denken</h2>
+        <p>
+            Wenn Textänderungen deinen Flow unterbrechen,
+            ist das kein UX-Problem – sondern ein Architekturproblem.
+        </p>
+        <a href="README.md" class="btn-primary">Dokumentation lesen</a>
+    </section>
+</main>
+
+<footer class="footer">
+    <p>&copy; 2026 CipherCore Academy | i18Core Insight</p>
+</footer>
+</body>
+</html>
