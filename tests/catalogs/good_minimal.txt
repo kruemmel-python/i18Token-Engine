@@ -1,0 +1,7 @@
+@meta locale=de_DE
+@meta fallback=en_US
+@meta plural=DEFAULT
+@meta note=Training 2026
+
+a1b2c3(Welcome): Hallo Welt
+d4e5f6(Count): Du hast %0 Items.

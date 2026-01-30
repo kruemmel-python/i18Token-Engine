@@ -5,9 +5,9 @@ from pathlib import Path
 import sys
 
 # Regex für Token-Definition: TOKEN(Label): Text
-DEF_RE = re.compile(r"^\s*([0-9a-fA-F]{6,32})(?:\((.*?)\))?\s*:\s*(.*)$")
+DEF_RE = re.compile(r"^\s*([0-9a-fA-F]{6,32})(?:\{([0-9a-zA-Z_-]+)\})?(?:\((.*?)\))?\s*:\s*(.*)$")
 # Regex für Referenzen: @TOKEN
-REF_RE = re.compile(r"@([0-9a-fA-F]{6,32})")
+REF_RE = re.compile(r"@([0-9a-fA-F]{6,32})(?:\{([0-9a-zA-Z_-]+)\})?")
 
 def generate_dot(path: Path) -> str:
     if not path.exists():
@@ -25,14 +25,20 @@ def generate_dot(path: Path) -> str:
                 m = DEF_RE.match(line)
                 if m:
                     token = m.group(1).lower()
-                    label = m.group(2) or ""
-                    text = m.group(3)
+                    variant = m.group(2)
+                    if variant:
+                        token += '{' + variant.lower() + '}'
+                    label = m.group(3) or ""
+                    text = m.group(4)
                     
                     nodes[token] = label
                     
                     # Suche nach Referenzen im Text
-                    for ref in REF_RE.findall(text):
-                        edges.append((token, ref.lower()))
+                    for ref_token, ref_variant in REF_RE.findall(text):
+                        lookup = ref_token.lower()
+                        if ref_variant:
+                            lookup += '{' + ref_variant.lower() + '}'
+                        edges.append((token, lookup))
         except Exception as e:
             print(f"Warnung bei {f}: {e}", file=sys.stderr)
 

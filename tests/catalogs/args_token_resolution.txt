@@ -1,0 +1,5 @@
+@meta locale=de_DE
+
+deadbeef(TokenArg): Bedeutungsstring
+aa11bb(ArgToken): Wert %0
+cc22dd(Literal): Literal %0

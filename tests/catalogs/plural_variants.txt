@@ -1,0 +1,8 @@
+@meta locale=de_DE
+@meta plural=SLAVIC
+
+c1c1c1(Items): Du hast %0 Items.
+c1c1c1{one}: Ein Item
+c1c1c1{few}: %0 Items
+c1c1c1{many}: Viele Items
+c1c1c1{other}: %0 Items (other)

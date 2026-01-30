@@ -1,0 +1,4 @@
+@meta locale=de_DE
+
+a1a1a1(LoopA): Referenz @b2b2b2
+b2b2b2(LoopB): Referenz @a1a1a1

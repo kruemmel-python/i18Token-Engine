@@ -5,8 +5,8 @@ import re
 import sys
 from pathlib import Path
 
-# Regex für Token am Zeilenanfang: hex(optional): ...
-TOKEN_RE = re.compile(r"^\s*([0-9a-fA-F]{6,32})(?:\(.*\))?\s*:")
+# Regex für Token am Zeilenanfang: hex(t) + optional variant + optional label
+TOKEN_RE = re.compile(r"^\s*([0-9a-fA-F]{6,32})(?:\{[0-9a-zA-Z_\-]+\})?(?:\(.*\))?\s*:")
 
 def get_existing_tokens(path: Path) -> set[str]:
     tokens = set()
@@ -40,7 +40,7 @@ def main():
     parser = argparse.ArgumentParser(description="Generiert einzigartige Hex-Tokens für die i18n Engine.")
     parser.add_argument("path", type=Path, nargs="?", default=Path("locale"), 
                         help="Pfad zur Katalog-Datei oder Ordner (für Duplikat-Check)")
-    parser.add_argument("--length", "-l", type=int, default=7, help="Länge des Tokens (6-32)")
+    parser.add_argument("--length", "-l", type=int, default=8, help="Länge des Tokens (6-32)")
     parser.add_argument("--count", "-n", type=int, default=1, help="Anzahl der Tokens")
     
     args = parser.parse_args()

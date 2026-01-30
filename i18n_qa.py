@@ -1,8 +1,9 @@
 import ctypes
+import platform
 import sys
 
 # Konfiguration
-LIB_PATH = "./i18n_engine.dll" # oder .so unter Linux
+LIB_PATH = "./i18n_engine.dll" if platform.system() == "Windows" else "./libi18n_engine.so"
 CATALOG_PATH = "locale/de.txt"
 
 def run_health_check():
@@ -14,9 +15,9 @@ def run_health_check():
 
     # API Setup
     lib.i18n_new.restype = ctypes.c_void_p
-    lib.i18n_last_error.argtypes = [ctypes.c_void_p]
-    lib.i18n_last_error.restype = ctypes.c_char_p
-    lib.i18n_check.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.c_int]
+    lib.i18n_last_error_copy.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int]
+    lib.i18n_last_error_copy.restype = ctypes.c_int
+    lib.i18n_check.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int]
     lib.i18n_check.restype = ctypes.c_int
     lib.i18n_load_txt_file.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.c_int]
 
@@ -24,7 +25,9 @@ def run_health_check():
     
     # 1. Katalog laden
     if lib.i18n_load_txt_file(engine, CATALOG_PATH.encode('utf-8'), 1) != 0:
-        err = lib.i18n_last_error(engine).decode('utf-8', errors='replace')
+        buf = ctypes.create_string_buffer(1024)
+        lib.i18n_last_error_copy(engine, buf, len(buf))
+        err = buf.value.decode('utf-8', errors='replace')
         print(f"❌ Kritischer Ladefehler in {CATALOG_PATH}: {err}")
         sys.exit(1)
 
