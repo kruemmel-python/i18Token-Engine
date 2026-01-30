@@ -1,0 +1,11 @@
+# Beispiel-Katalog für QA-Check
+
+# Einfache Strings
+12fe3e4(AppTitle): Meine Super App
+5ad32cdde(BtnClose): Schließen
+
+# Parameter (%0)
+b16b00b(Welcome): Willkommen, %0!
+
+# Verschachtelung (@TOKEN)
+a1b2c3d(Dialog): @12fe3e4 sagt: @b16b00b
