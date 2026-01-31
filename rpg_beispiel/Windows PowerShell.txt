@@ -1,0 +1,61 @@
+(.venv) PS D:\i18Token\Beispiel_Programm_Python> python game.py
+
+Willkommen in der Mycelia-Matrix. Operator-Schnittstelle aktiv.
+
+(1) Sektor scannen (2) NPC & Shop (3) Status & Quests (4) Highscores (5) Speichern & Beenden
+> 2
+
+[P]
+   /||\
+   /  \  (PROPHET)
+Prophet: "Dein Code glänzt. Brauchst du Ausrüstung oder Upgrades?"
+--- MYCEL-MARKTPLATZ (Credits: 652) ---
+(1) Reparatur-Kit [150 Cr] (2) Waffen-Tuning +5 ATK [500 Cr] (3) Trait-Injector [250 Cr] (4) Verschlüsseltes Paket [400Cr] (5) Zurück
+> 4
+Verschlüsseltes Paket entschlüsselt! Neue Logs: 000E20, 000E21, 000E22
+Boss fordern? (j/n) j
+
+[WARNUNG] Kritische Instabilität! SubQG Core detektiert!
+
+...korrumpierter... ...verlorene Safe-Zeilen. Ein verlassener...
+
+[STABILITÄT] Sektor-Integrität bei 30%. Physik-Konstanten normal.
+[PHYSICS] Gravitations-Glitch! Dein Schlag wird beschleunigt (+9 Schaden).
+SubQG Core (HP: 250) in Sektor Alpha-Sektor lokalisiert!
+.
+     / \
+    | Q |
+     \ /
+      '   (DER CORE)
+
+Operator: 180 HP | SubQG Core: 250 HP
+AKTION: (1) Schlag (2) Mycel-Stoß (Schwer) (3) Reparatur (Heilen)
+> 2
+>>> VOLLTREFFER!
+Operator -> SubQG Core: 97 Schaden übertragen.
+SubQG Core -> Operator: 15 Schaden übertragen.
+
+Operator: 165 HP | SubQG Core: 153 HP
+AKTION: (1) Schlag (2) Mycel-Stoß (Schwer) (3) Reparatur (Heilen)
+> 1
+Operator -> SubQG Core: 55 Schaden übertragen.
+SubQG Core -> Operator: 15 Schaden übertragen.
+>>> Modul 000B50 (Phase-Shift: CRIT_MUL:2.0) ausgeführt. Befehle: STAB_SUB-40.0.
+> Bossphase aktiviert: Stabilität reduziert.
+
+Operator: 150 HP | SubQG Core: 98 HP
+AKTION: (1) Schlag (2) Mycel-Stoß (Schwer) (3) Reparatur (Heilen)
+> 1
+Operator -> SubQG Core: 54 Schaden übertragen.
+SubQG Core -> Operator: 15 Schaden übertragen.
+
+Operator: 135 HP | SubQG Core: 44 HP
+AKTION: (1) Schlag (2) Mycel-Stoß (Schwer) (3) Reparatur (Heilen)
+> 2
+>>> VOLLTREFFER!
+Operator -> SubQG Core: 97 Schaden übertragen.
+SubQG Core wurde gelöscht. +50 XP | +79 Credits.
+*** MATRIX GEREINIGT: Du hast den SubQG Core besiegt! ***
+
+Matrix-Sitzung beendet...
+(.venv) PS D:\i18Token\Beispiel_Programm_Python>
