@@ -8,6 +8,15 @@
 #include <cstdint>
 #include <filesystem>
 #include <limits>
+#include <cerrno>
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <fcntl.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#endif
 
 namespace {
 constexpr char BINARY_MAGIC[4] = { 'I', '1', '8', 'N' };
@@ -50,6 +59,111 @@ uint32_t fnv1a32_append(uint32_t hash, const uint8_t* data, size_t len) {
   }
   return h;
 }
+
+struct FileMapping {
+  void* data = nullptr;
+  size_t size = 0;
+#ifdef _WIN32
+  HANDLE file_handle = INVALID_HANDLE_VALUE;
+  HANDLE mapping_handle = nullptr;
+#else
+  int fd = -1;
+#endif
+
+  ~FileMapping() { unmap(); }
+
+  bool map(const std::filesystem::path& file_path, std::string& err) {
+    unmap();
+#ifdef _WIN32
+    const std::wstring wide_path = file_path.wstring();
+    file_handle = CreateFileW(wide_path.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+    if (file_handle == INVALID_HANDLE_VALUE) {
+      err = "Datei konnte nicht geöffnet werden.";
+      return false;
+    }
+    LARGE_INTEGER size_li;
+    if (!GetFileSizeEx(file_handle, &size_li)) {
+      err = "Dateigröße konnte nicht ermittelt werden.";
+      unmap();
+      return false;
+    }
+    if (size_li.QuadPart <= 0) {
+      err = "Datei ist leer.";
+      unmap();
+      return false;
+    }
+    mapping_handle = CreateFileMappingW(file_handle, nullptr, PAGE_READONLY, 0, 0, nullptr);
+    if (!mapping_handle) {
+      err = "Datei-Mapping fehlgeschlagen.";
+      unmap();
+      return false;
+    }
+    data = MapViewOfFile(mapping_handle, FILE_MAP_READ, 0, 0, 0);
+    if (!data) {
+      err = "MapViewOfFile fehlgeschlagen.";
+      unmap();
+      return false;
+    }
+    size = (size_t)size_li.QuadPart;
+#else
+    const std::string native_path = file_path.string();
+    fd = open(native_path.c_str(), O_RDONLY);
+    if (fd < 0) {
+      err = "Datei konnte nicht geöffnet werden.";
+      return false;
+    }
+    struct stat st {};
+    if (fstat(fd, &st) != 0) {
+      err = "Dateigröße konnte nicht ermittelt werden.";
+      unmap();
+      return false;
+    }
+    if (st.st_size <= 0) {
+      err = "Datei ist leer.";
+      unmap();
+      return false;
+    }
+    size = (size_t)st.st_size;
+    data = mmap(nullptr, size, PROT_READ, MAP_PRIVATE, fd, 0);
+    if (data == MAP_FAILED) {
+      data = nullptr;
+      err = "Datei-Mapping fehlgeschlagen.";
+      unmap();
+      return false;
+    }
+    close(fd);
+    fd = -1;
+#endif
+    return true;
+  }
+
+  void unmap() {
+#ifdef _WIN32
+    if (data) {
+      UnmapViewOfFile(data);
+      data = nullptr;
+    }
+    if (mapping_handle) {
+      CloseHandle(mapping_handle);
+      mapping_handle = nullptr;
+    }
+    if (file_handle != INVALID_HANDLE_VALUE) {
+      CloseHandle(file_handle);
+      file_handle = INVALID_HANDLE_VALUE;
+    }
+#else
+    if (data && size > 0) {
+      munmap(data, size);
+      data = nullptr;
+    }
+    if (fd >= 0) {
+      close(fd);
+      fd = -1;
+    }
+#endif
+    size = 0;
+  }
+};
 } // namespace
 
 void set_engine_error(I18nEngine* eng, const std::string& msg) {
@@ -297,7 +411,8 @@ void I18nEngine::scan_inline_refs(const std::string& text, std::vector<std::stri
   out_refs.erase(std::unique(out_refs.begin(), out_refs.end()), out_refs.end());
 }
 
-std::string I18nEngine::resolve_arg(const std::string& arg,
+std::string I18nEngine::resolve_arg(const CatalogSnapshot* state,
+                                    const std::string& arg,
                                     std::unordered_set<std::string>& seen,
                                     int depth) {
   if (!arg.empty() && arg[0] == '=') {
@@ -320,13 +435,14 @@ std::string I18nEngine::resolve_arg(const std::string& arg,
 
   if (!is_hex_token(base)) return arg;
 
-  auto it = catalog.find(lookup);
-  if (it == catalog.end()) return arg;
+  auto it = state->catalog.find(lookup);
+  if (it == state->catalog.end()) return arg;
 
-  return translate_impl(lookup, {}, seen, depth + 1);
+  return translate_impl(state, lookup, {}, seen, depth + 1);
 }
 
-std::string I18nEngine::translate_impl(const std::string& token,
+std::string I18nEngine::translate_impl(const CatalogSnapshot* state,
+                                       const std::string& token,
                                        const std::vector<std::string>& args,
                                        std::unordered_set<std::string>& seen,
                                        int depth) {
@@ -334,8 +450,8 @@ std::string I18nEngine::translate_impl(const std::string& token,
   if (seen.count(token)) return "⟦CYCLE:" + token + "⟧";
   seen.insert(token);
 
-  auto it = catalog.find(token);
-  if (it == catalog.end()) {
+  auto it = state->catalog.find(token);
+  if (it == state->catalog.end()) {
     seen.erase(token);
     return "⟦" + token + "⟧";
   }
@@ -352,8 +468,8 @@ std::string I18nEngine::translate_impl(const std::string& token,
 
       if (try_parse_inline_token(raw, i, ref_tok, adv)) {
         // harte Token-Ref: muss im Catalog sein, sonst sichtbarer Marker
-        if (catalog.find(ref_tok) == catalog.end()) out += "⟦MISSING:@" + ref_tok + "⟧";
-        else out += translate_impl(ref_tok, {}, seen, depth + 1);
+        if (state->catalog.find(ref_tok) == state->catalog.end()) out += "⟦MISSING:@" + ref_tok + "⟧";
+        else out += translate_impl(state, ref_tok, {}, seen, depth + 1);
 
         i += adv;
         continue;
@@ -381,7 +497,7 @@ std::string I18nEngine::translate_impl(const std::string& token,
         ++j;
       }
 
-      if (idx >= 0 && (size_t)idx < args.size()) out += resolve_arg(args[(size_t)idx], seen, depth);
+      if (idx >= 0 && (size_t)idx < args.size()) out += resolve_arg(state, args[(size_t)idx], seen, depth);
       else out += "⟦arg:" + std::to_string(idx) + "⟧";
 
       i = j;
@@ -421,42 +537,48 @@ bool I18nEngine::load_txt_catalog(std::string src, bool strict) {
   clear_last_error();
   if (src.empty()) { set_last_error("src is empty"); return false; }
 
-  catalog.clear();
-  labels.clear();
-  meta_locale.clear();
-  meta_fallback.clear();
-  meta_plural = PluralRule::DEFAULT;
-  meta_note.clear();
-  plural_variants.clear();
-
+  std::shared_ptr<CatalogSnapshot> snapshot;
+  std::string err;
   if (looks_like_binary_catalog(src)) {
-    return load_binary_catalog(src, strict);
+    const uint8_t* data = reinterpret_cast<const uint8_t*>(src.data());
+    snapshot = build_snapshot_from_binary(data, src.size(), strict, err);
+  } else {
+    strip_utf8_bom(src);
+    snapshot = build_snapshot_from_text(std::move(src), strict, err);
   }
 
-  strip_utf8_bom(src); // BOM entfernen (falls vorhanden)
+  if (!snapshot) {
+    if (err.empty()) err = "Katalog konnte nicht geladen werden.";
+    set_last_error(err);
+    return false;
+  }
 
+  install_snapshot(snapshot);
+  return true;
+}
+
+std::shared_ptr<I18nEngine::CatalogSnapshot> I18nEngine::build_snapshot_from_text(std::string&& src, bool strict, std::string& err) {
+  err.clear();
+  auto snapshot = std::make_shared<CatalogSnapshot>();
   size_t start = 0;
   size_t loaded = 0;
   int line_no = 0;
+  bool meta_phase = true;
+  bool seen_any_entry = false;
 
   auto next_line = [&](std::string& out_line) -> bool {
     if (start >= src.size()) return false;
     size_t end = src.find('\n', start);
     if (end == std::string::npos) end = src.size();
-
     out_line = src.substr(start, end - start);
     if (!out_line.empty() && out_line.back() == '\r') out_line.pop_back();
-
     start = (end < src.size()) ? end + 1 : src.size();
     return true;
   };
 
   std::string line;
-  bool meta_phase = true;
-  bool seen_any_entry = false;
   while (next_line(line)) {
     ++line_no;
-
     std::string raw = line;
     trim_inplace(raw);
     if (raw.empty()) continue;
@@ -467,49 +589,48 @@ bool I18nEngine::load_txt_catalog(std::string src, bool strict) {
       if (parse_meta_line(raw, key, value)) {
         if (seen_any_entry) {
           if (strict) {
-            set_last_error("Meta-Zeile nach Einträgen in Zeile " + std::to_string(line_no));
-            return false;
+            err = "Meta-Zeile nach Einträgen in Zeile " + std::to_string(line_no);
+            return {};
           }
           continue;
         }
 
         if (key == "locale") {
-          meta_locale = value;
+          snapshot->meta_locale = value;
           continue;
         }
         if (key == "fallback") {
-          meta_fallback = value;
+          snapshot->meta_fallback = value;
           continue;
         }
         if (key == "note") {
-          meta_note = value;
+          snapshot->meta_note = value;
           continue;
         }
         if (key == "plural") {
           bool ok = false;
-          meta_plural = parse_plural_rule_name(value, ok);
+          snapshot->meta_plural = parse_plural_rule_name(value, ok);
           if (!ok && strict) {
-            set_last_error("Unbekannte Plural-Rule '" + value + "' in Zeile " + std::to_string(line_no));
-            return false;
+            err = "Unbekannte Plural-Rule '" + value + "' in Zeile " + std::to_string(line_no);
+            return {};
           }
           continue;
         }
         if (strict) {
-          set_last_error("Unbekannter Meta-Key '" + key + "' in Zeile " + std::to_string(line_no));
-          return false;
+          err = "Unbekannter Meta-Key '" + key + "' in Zeile " + std::to_string(line_no);
+          return {};
         }
         continue;
       }
       meta_phase = false;
     }
 
-    std::string token, label, text, err;
-    const bool ok = parse_line(line, token, label, text, err);
-
+    std::string token, label, text, parse_err;
+    const bool ok = parse_line(line, token, label, text, parse_err);
     if (!ok) {
-      if (strict && !err.empty()) {
-        set_last_error("Parse-Fehler in Zeile " + std::to_string(line_no) + ": " + err);
-        return false;
+      if (strict && !parse_err.empty()) {
+        err = "Parse-Fehler in Zeile " + std::to_string(line_no) + ": " + parse_err;
+        return {};
       }
       continue;
     }
@@ -517,102 +638,101 @@ bool I18nEngine::load_txt_catalog(std::string src, bool strict) {
     std::string base_token = token;
     std::string variant_token;
     if (parse_variant_suffix(token, base_token, variant_token)) {
-      if (!variant_token.empty()) plural_variants[base_token].insert(variant_token);
+      if (!variant_token.empty()) snapshot->plural_variants[base_token].insert(variant_token);
     }
 
-    if (catalog.find(token) != catalog.end()) {
-      set_last_error("Doppelter Token in Zeile " + std::to_string(line_no) + ": " + token);
-      return false;
+    if (snapshot->catalog.find(token) != snapshot->catalog.end()) {
+      err = "Doppelter Token in Zeile " + std::to_string(line_no) + ": " + token;
+      return {};
     }
 
-    catalog.emplace(token, std::move(text));
-    if (!label.empty()) labels.emplace(token, std::move(label));
+    snapshot->catalog.emplace(token, std::move(text));
+    if (!label.empty()) snapshot->labels.emplace(token, std::move(label));
     ++loaded;
     seen_any_entry = true;
   }
 
   if (loaded == 0) {
-    set_last_error("Kein einziger gültiger Eintrag geladen (leerer Katalog?).");
-    return false;
+    err = "Kein einziger gültiger Eintrag geladen (leerer Katalog?).";
+    return {};
   }
-  return true;
+
+  return snapshot;
 }
 
-bool I18nEngine::load_binary_catalog(const std::string& data, bool strict) {
-  clear_last_error();
-  if (data.size() < BINARY_HEADER_SIZE_V1) {
-    set_last_error("Binär-Format: Header zu kurz.");
-    return false;
+std::shared_ptr<I18nEngine::CatalogSnapshot> I18nEngine::build_snapshot_from_binary(const uint8_t* data, size_t size, bool strict, std::string& err) {
+  err.clear();
+  if (size < BINARY_HEADER_SIZE_V1) {
+    err = "Binär-Format: Header zu kurz.";
+    return {};
   }
 
-  const uint8_t* raw = reinterpret_cast<const uint8_t*>(data.data());
-  if (std::memcmp(raw, BINARY_MAGIC, 4) != 0) {
-    set_last_error("Unbekanntes Binär-Format.");
-    return false;
+  if (std::memcmp(data, BINARY_MAGIC, 4) != 0) {
+    err = "Unbekanntes Binär-Format.";
+    return {};
   }
 
-  const uint8_t version = raw[4];
+  const uint8_t version = data[4];
   if (version != BINARY_VERSION_V1 && version != BINARY_VERSION) {
-    set_last_error("Binär-Format-Version nicht unterstützt.");
-    return false;
+    err = "Binär-Format-Version nicht unterstützt.";
+    return {};
   }
 
-  meta_locale.clear();
-  meta_fallback.clear();
-  meta_note.clear();
-  meta_plural = PluralRule::DEFAULT;
-
-  const uint8_t flags = raw[5];
-  (void)flags;
   uint8_t plural_rule = 0;
   size_t header_size = (version == BINARY_VERSION_V1) ? BINARY_HEADER_SIZE_V1 : BINARY_HEADER_SIZE_V2;
   uint32_t metadata_size = 0;
   if (version >= BINARY_VERSION_CURRENT) {
-    plural_rule = raw[6];
-    metadata_size = read_le_u32(raw + 20);
-    if (metadata_size > data.size() - header_size) {
-      set_last_error("Binär-Format: Metadata block zu groß.");
-      return false;
+    plural_rule = data[6];
+    metadata_size = read_le_u32(data + 20);
+    if (metadata_size > size - header_size) {
+      err = "Binär-Format: Metadata block zu groß.";
+      return {};
     }
     if (metadata_size > 0 && metadata_size < METADATA_HEADER_SIZE) {
-      set_last_error("Binär-Format: Metadata block zu kurz.");
-      return false;
+      err = "Binär-Format: Metadata block zu kurz.";
+      return {};
     }
   }
 
-  if (plural_rule <= static_cast<uint8_t>(PluralRule::ARABIC)) meta_plural = static_cast<PluralRule>(plural_rule);
-  const uint32_t entry_count = read_le_u32(raw + 8);
-  const uint32_t string_table_size = read_le_u32(raw + 12);
-  const uint32_t checksum = read_le_u32(raw + 16);
+  auto snapshot = std::make_shared<CatalogSnapshot>();
+  snapshot->meta_plural = PluralRule::DEFAULT;
+  if (plural_rule <= static_cast<uint8_t>(PluralRule::ARABIC)) {
+    snapshot->meta_plural = static_cast<PluralRule>(plural_rule);
+  }
+
+  const uint32_t entry_count = read_le_u32(data + 8);
+  const uint32_t string_table_size = read_le_u32(data + 12);
+  const uint32_t checksum = read_le_u32(data + 16);
 
   size_t metadata_block_offset = header_size;
   if (version >= BINARY_VERSION_CURRENT && metadata_size > 0) {
-    if (metadata_block_offset + metadata_size > data.size()) {
-      set_last_error("Binär-Format: Metadata block überläuft.");
-      return false;
+    if (metadata_block_offset + metadata_size > size) {
+      err = "Binär-Format: Metadata block überläuft.";
+      return {};
     }
-    const uint8_t* meta_ptr = raw + metadata_block_offset;
+
+    const uint8_t* meta_ptr = data + metadata_block_offset;
     const uint16_t locale_len = read_le_u16(meta_ptr);
     const uint16_t fallback_len = read_le_u16(meta_ptr + 2);
     const uint16_t note_len = read_le_u16(meta_ptr + 4);
     const size_t expected = METADATA_HEADER_SIZE + locale_len + fallback_len + note_len;
     if (expected != metadata_size) {
-      set_last_error("Binär-Format: Metadata-Länge inkonsistent.");
-      return false;
+      err = "Binär-Format: Metadata-Länge inkonsistent.";
+      return {};
     }
+
     size_t cursor = metadata_block_offset + METADATA_HEADER_SIZE;
-    if (locale_len > 0) meta_locale.assign(reinterpret_cast<const char*>(raw + cursor), locale_len);
+    if (locale_len > 0) snapshot->meta_locale.assign(reinterpret_cast<const char*>(data + cursor), locale_len);
     cursor += locale_len;
-    if (fallback_len > 0) meta_fallback.assign(reinterpret_cast<const char*>(raw + cursor), fallback_len);
+    if (fallback_len > 0) snapshot->meta_fallback.assign(reinterpret_cast<const char*>(data + cursor), fallback_len);
     cursor += fallback_len;
-    if (note_len > 0) meta_note.assign(reinterpret_cast<const char*>(raw + cursor), note_len);
+    if (note_len > 0) snapshot->meta_note.assign(reinterpret_cast<const char*>(data + cursor), note_len);
     cursor += note_len;
-    (void)cursor;
   }
 
   size_t entry_table_offset = metadata_block_offset + metadata_size;
   size_t offset = entry_table_offset;
-  struct EntryInfo {
+struct EntryInfo {
     std::string base;
     std::string variant;
     uint32_t text_offset;
@@ -623,94 +743,88 @@ bool I18nEngine::load_binary_catalog(const std::string& data, bool strict) {
   entries.reserve(entry_count);
 
   for (uint32_t i = 0; i < entry_count; ++i) {
-    if (offset >= data.size()) {
-      set_last_error("Binär-Format: Eintragstabelle zu kurz.");
-      return false;
+    if (offset >= size) {
+      err = "Binär-Format: Eintragstabelle zu kurz.";
+      return {};
     }
 
-    const uint8_t token_len = raw[offset++];
+    const uint8_t token_len = data[offset++];
     if (token_len < 6 || token_len > 32) {
-      set_last_error("Binär-Format: Ungültige Token-Länge.");
-      return false;
+      err = "Binär-Format: Ungültige Token-Länge.";
+      return {};
     }
 
-    if (offset + token_len > data.size()) {
-      set_last_error("Binär-Format: Token-Länge überschreitet Daten.");
-      return false;
+    if (offset + token_len > size) {
+      err = "Binär-Format: Token-Länge überschreitet Daten.";
+      return {};
     }
 
-    std::string base(reinterpret_cast<const char*>(raw + offset), token_len);
+    std::string base(reinterpret_cast<const char*>(data + offset), token_len);
     offset += token_len;
     base = to_lower_ascii(base);
 
-    const uint8_t variant_len = raw[offset++];
+    const uint8_t variant_len = data[offset++];
     std::string variant;
     if (variant_len > 0) {
-      if (offset + variant_len > data.size()) {
-        set_last_error("Binär-Format: Variant-Länge überschreitet Daten.");
-        return false;
+      if (offset + variant_len > size) {
+        err = "Binär-Format: Variant-Länge überschreitet Daten.";
+        return {};
       }
-      variant.assign(reinterpret_cast<const char*>(raw + offset), variant_len);
+      variant.assign(reinterpret_cast<const char*>(data + offset), variant_len);
       offset += variant_len;
       variant = to_lower_ascii(variant);
       if (!is_variant_valid(variant)) {
-        set_last_error("Binär-Format: Variant enthält ungültige Zeichen.");
-        return false;
+        err = "Binär-Format: Variant enthält ungültige Zeichen.";
+        return {};
       }
     }
 
     if (!is_hex_token(base)) {
-      set_last_error("Binär-Format: Token ist kein Hex-String.");
-      return false;
+      err = "Binär-Format: Token ist kein Hex-String.";
+      return {};
     }
 
-    if (offset + 8 > data.size()) {
-      set_last_error("Binär-Format: Eintrag zu kurz.");
-      return false;
+    if (offset + 8 > size) {
+      err = "Binär-Format: Eintrag zu kurz.";
+      return {};
     }
 
-    const uint32_t text_offset = read_le_u32(raw + offset);
+    const uint32_t text_offset = read_le_u32(data + offset);
     offset += 4;
-    const uint32_t text_length = read_le_u32(raw + offset);
+    const uint32_t text_length = read_le_u32(data + offset);
     offset += 4;
 
     entries.push_back({ base, variant, text_offset, text_length });
   }
 
   const size_t strings_base = offset;
-  if (strings_base + string_table_size > data.size()) {
-    set_last_error("Binär-Format: String-Table zu kurz.");
-    return false;
+  if (strings_base + string_table_size > size) {
+    err = "Binär-Format: String-Table zu kurz.";
+    return {};
   }
 
   uint32_t computed_checksum = 0;
   if (version == BINARY_VERSION_V1) {
-    computed_checksum = fnv1a32(raw + strings_base, string_table_size);
+    computed_checksum = fnv1a32(data + strings_base, string_table_size);
   } else {
     computed_checksum = 2166136261u;
-    if (metadata_size > 0) computed_checksum = fnv1a32_append(computed_checksum, raw + metadata_block_offset, metadata_size);
-    computed_checksum = fnv1a32_append(computed_checksum, raw + entry_table_offset, strings_base - entry_table_offset);
-    computed_checksum = fnv1a32_append(computed_checksum, raw + strings_base, string_table_size);
+    if (metadata_size > 0) computed_checksum = fnv1a32_append(computed_checksum, data + metadata_block_offset, metadata_size);
+    computed_checksum = fnv1a32_append(computed_checksum, data + entry_table_offset, strings_base - entry_table_offset);
+    computed_checksum = fnv1a32_append(computed_checksum, data + strings_base, string_table_size);
   }
 
-  if (computed_checksum != checksum) {
-    if (strict) {
-      set_last_error("Binär-Format: Checksum stimmt nicht.");
-      return false;
-    }
+  if (computed_checksum != checksum && strict) {
+    err = "Binär-Format: Checksum stimmt nicht.";
+    return {};
   }
-
-  catalog.clear();
-  labels.clear();
-  plural_variants.clear();
 
   for (const auto& entry : entries) {
     if ((uint64_t)entry.text_offset + entry.text_length > string_table_size) {
-      set_last_error("Binär-Format: Text-Offset außerhalb der String-Table.");
-      return false;
+      err = "Binär-Format: Text-Offset außerhalb der String-Table.";
+      return {};
     }
 
-    const char* text_ptr = reinterpret_cast<const char*>(raw + strings_base + entry.text_offset);
+    const char* text_ptr = reinterpret_cast<const char*>(data + strings_base + entry.text_offset);
     std::string value(text_ptr, entry.text_length);
 
     std::string key = entry.base;
@@ -718,39 +832,82 @@ bool I18nEngine::load_binary_catalog(const std::string& data, bool strict) {
       key += '{';
       key += entry.variant;
       key += '}';
-
-      plural_variants[entry.base].insert(entry.variant);
+      snapshot->plural_variants[entry.base].insert(entry.variant);
     }
 
-    if (catalog.find(key) != catalog.end()) {
-      set_last_error("Binär-Format: Doppelte Einträge.");
-      return false;
+    if (snapshot->catalog.find(key) != snapshot->catalog.end()) {
+      err = "Binär-Format: Doppelte Einträge.";
+      return {};
     }
 
-    catalog.emplace(std::move(key), std::move(value));
+    snapshot->catalog.emplace(std::move(key), std::move(value));
   }
 
-  if (catalog.empty()) {
-    set_last_error("Binär-Format: Kein Eintrag enthalten.");
-    return false;
+  if (snapshot->catalog.empty()) {
+    err = "Binär-Format: Kein Eintrag enthalten.";
+    return {};
   }
 
-  return true;
+  return snapshot;
+}
+
+void I18nEngine::install_snapshot(std::shared_ptr<CatalogSnapshot> snapshot) {
+  if (!snapshot) return;
+  meta_locale = snapshot->meta_locale;
+  meta_fallback = snapshot->meta_fallback;
+  meta_note = snapshot->meta_note;
+  meta_plural = snapshot->meta_plural;
+  std::atomic_store_explicit(&active_snapshot,
+                             std::static_pointer_cast<const CatalogSnapshot>(snapshot),
+                             std::memory_order_release);
+}
+
+std::shared_ptr<const I18nEngine::CatalogSnapshot> I18nEngine::acquire_snapshot() const noexcept {
+  return std::atomic_load_explicit(&active_snapshot, std::memory_order_acquire);
+}
+
+bool I18nEngine::is_binary_catalog_path(const std::string& path) noexcept {
+  const size_t dot_pos = path.find_last_of('.');
+  if (dot_pos == std::string::npos) return false;
+  std::string ext = path.substr(dot_pos);
+  for (char& c : ext) c = (char)std::tolower((unsigned char)c);
+  return ext == ".i18n" || ext == ".bin";
 }
 
 bool I18nEngine::load_txt_file(const char* path, bool strict) {
   clear_last_error();
   if (!path) { set_last_error("path == nullptr"); return false; }
-  
-  // Pfad und Modus für Reload speichern
-  current_path = path;
-  current_strict = strict;
 
   std::string err;
-  std::string data = read_file_utf8(path, err);
-  if (!err.empty()) { set_last_error(err); return false; }
+  std::shared_ptr<CatalogSnapshot> snapshot;
+  const std::string path_str = path;
 
-  return load_txt_catalog(std::move(data), strict);
+  if (is_binary_catalog_path(path_str)) {
+    FileMapping mapping;
+    if (!mapping.map(std::filesystem::path(path_str), err)) {
+      set_last_error(err);
+      return false;
+    }
+    snapshot = build_snapshot_from_binary(reinterpret_cast<const uint8_t*>(mapping.data), mapping.size, strict, err);
+    if (!snapshot) {
+      set_last_error(err);
+      return false;
+    }
+  } else {
+    std::string data = read_file_utf8(path, err);
+    if (!err.empty()) { set_last_error(err); return false; }
+    strip_utf8_bom(data);
+    snapshot = build_snapshot_from_text(std::move(data), strict, err);
+    if (!snapshot) {
+      set_last_error(err);
+      return false;
+    }
+  }
+
+  current_path = path;
+  current_strict = strict;
+  install_snapshot(snapshot);
+  return true;
 }
 
 bool I18nEngine::reload() {
@@ -760,14 +917,18 @@ bool I18nEngine::reload() {
 }
 
 std::string I18nEngine::translate(const std::string& token_in, const std::vector<std::string>& args) {
+  auto snapshot = acquire_snapshot();
+  if (!snapshot) return "⟦NO_CATALOG⟧";
   std::string token = to_lower_ascii(token_in);
   std::unordered_set<std::string> seen;
-  return translate_impl(token, args, seen, 0);
+  return translate_impl(snapshot.get(), token, args, seen, 0);
 }
 
 std::string I18nEngine::translate_plural(const std::string& token_in,
                                          int count,
                                          const std::vector<std::string>& args) {
+  auto snapshot = acquire_snapshot();
+  if (!snapshot) return "⟦NO_CATALOG⟧";
   std::string normalized = to_lower_ascii(token_in);
   std::string base;
   std::string variant;
@@ -777,13 +938,13 @@ std::string I18nEngine::translate_plural(const std::string& token_in,
   } else {
     base = normalized;
     const std::string desired = base + "{" + pick_variant_name(meta_plural, count) + "}";
-    if (catalog.find(desired) != catalog.end()) {
+    if (snapshot->catalog.find(desired) != snapshot->catalog.end()) {
       lookup = desired;
-    } else if (catalog.find(base + "{other}") != catalog.end()) {
+    } else if (snapshot->catalog.find(base + "{other}") != snapshot->catalog.end()) {
       lookup = base + "{other}";
     } else {
-      const auto it = plural_variants.find(base);
-      if (it != plural_variants.end() && !it->second.empty()) {
+      const auto it = snapshot->plural_variants.find(base);
+      if (it != snapshot->plural_variants.end() && !it->second.empty()) {
         lookup = base + '{' + *it->second.begin() + '}';
       } else {
         lookup = base;
@@ -792,17 +953,20 @@ std::string I18nEngine::translate_plural(const std::string& token_in,
   }
 
   std::unordered_set<std::string> seen;
-  return translate_impl(lookup, args, seen, 0);
+  return translate_impl(snapshot.get(), lookup, args, seen, 0);
 }
 
 std::string I18nEngine::dump_table() const {
+  auto snapshot = acquire_snapshot();
+  if (!snapshot) return "Catalog not loaded\n";
+  const auto& catalog = snapshot->catalog;
+  const auto& labels = snapshot->labels;
+
   std::string out;
   out.reserve(catalog.size() * 64);
-
   out += "Token        | Label                  | Inhalt\n";
   out += "------------------------------------------------------------\n";
 
-  // Determinismus: Sortiere Keys
   std::vector<std::string> keys;
   keys.reserve(catalog.size());
   for (const auto& kv : catalog) keys.push_back(kv.first);
@@ -835,6 +999,11 @@ std::string I18nEngine::find_any(const std::string& query) const {
   std::string out;
 
   // Determinismus: Sortiere Keys
+  auto snapshot = acquire_snapshot();
+  if (!snapshot) return "(no catalog loaded)\n";
+  const auto& catalog = snapshot->catalog;
+  const auto& labels = snapshot->labels;
+
   std::vector<std::string> keys;
   keys.reserve(catalog.size());
   for (const auto& kv : catalog) keys.push_back(kv.first);
@@ -868,6 +1037,14 @@ std::string I18nEngine::find_any(const std::string& query) const {
 
 std::string I18nEngine::check_catalog_report(int& out_code) const {
   out_code = 0;
+
+  auto snapshot = acquire_snapshot();
+  if (!snapshot) {
+    out_code = 2;
+    return "CHECK: FAIL\nGrund: Katalog ist leer oder nicht geladen.\n";
+  }
+
+  const auto& catalog = snapshot->catalog;
 
   if (catalog.empty()) {
     out_code = 2;
@@ -1081,7 +1258,11 @@ uint32_t I18nEngine::fnv1a32(const uint8_t* data, size_t len) noexcept {
 }
 
 bool I18nEngine::export_binary_catalog(const char* path) const {
-  if (!path || catalog.empty()) return false;
+  if (!path) return false;
+  auto snapshot = acquire_snapshot();
+  if (!snapshot || snapshot->catalog.empty()) return false;
+
+  const auto& catalog = snapshot->catalog;
 
   struct ExportEntry {
     std::string base;

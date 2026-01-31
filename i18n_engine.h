@@ -6,6 +6,8 @@
 #include <set>
 #include <functional>
 #include <cstdint>
+#include <memory>
+#include <atomic>
 
 class I18nEngine {
 private:
@@ -15,9 +17,17 @@ private:
     ARABIC  = 2
   };
 
-  std::unordered_map<std::string, std::string> catalog; // token -> text (token may carry variant suffix)
-  std::unordered_map<std::string, std::string> labels;  // token -> label (optional)
-  std::unordered_map<std::string, std::set<std::string>> plural_variants;
+  struct CatalogSnapshot {
+    std::unordered_map<std::string, std::string> catalog;
+    std::unordered_map<std::string, std::string> labels;
+    std::unordered_map<std::string, std::set<std::string>> plural_variants;
+    std::string meta_locale;
+    std::string meta_fallback;
+    std::string meta_note;
+    PluralRule meta_plural = PluralRule::DEFAULT;
+  };
+
+  std::shared_ptr<const CatalogSnapshot> active_snapshot;
   std::string last_error;
   std::string current_path;
   bool current_strict = false;
@@ -42,7 +52,6 @@ private:
                          std::string& out_text,
                          std::string& out_err);
   static std::string read_file_utf8(const char* path, std::string& err);
-  bool load_binary_catalog(const std::string& data, bool strict);
   static bool try_parse_inline_token(const std::string& s, size_t at_pos,
                                      std::string& out_token, size_t& out_advance);
   static void scan_inline_refs(const std::string& text, std::vector<std::string>& out_refs);
@@ -59,13 +68,22 @@ private:
   friend void set_engine_error(I18nEngine* eng, const std::string& msg);
   friend void clear_engine_error(I18nEngine* eng);
 
-  std::string resolve_arg(const std::string& arg,
+  std::string resolve_arg(const CatalogSnapshot* state,
+                          const std::string& arg,
                           std::unordered_set<std::string>& seen,
                           int depth);
-  std::string translate_impl(const std::string& token,
+  std::string translate_impl(const CatalogSnapshot* state,
+                             const std::string& token,
                              const std::vector<std::string>& args,
                              std::unordered_set<std::string>& seen,
                              int depth);
+
+  std::shared_ptr<CatalogSnapshot> build_snapshot_from_text(std::string&& src, bool strict, std::string& err);
+  std::shared_ptr<CatalogSnapshot> build_snapshot_from_binary(const uint8_t* data, size_t size, bool strict,
+                                                              std::string& err);
+  void install_snapshot(std::shared_ptr<CatalogSnapshot> snapshot);
+  std::shared_ptr<const CatalogSnapshot> acquire_snapshot() const noexcept;
+  static bool is_binary_catalog_path(const std::string& path) noexcept;
 public:
   enum class PublicPluralRule : uint8_t {
     DEFAULT = 0,
