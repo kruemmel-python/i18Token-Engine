@@ -1,3 +1,0 @@
-000E23: [LOG] Fragment: Kryoschutzprotokolle markieren verbotene Offsets.
-000E24: [LOG] Fragment: Der Operator hinterlässt Spuren in Alpha-Bitfeldern.
-000E25: [LOG] Fragment: Neue Verknüpfungen aktivieren versteckte Traits.

@@ -1,3 +1,0 @@
-000E20: [LOG] Fragment: Der Core schwankt im Takt der Meta-Ströme.
-000E21: [LOG] Fragment: Die Hardware flüstert von vergessenen Payloads.
-000E22: [LOG] Fragment: Eine Geheimklasse beschreibt die nächste Mutation.
