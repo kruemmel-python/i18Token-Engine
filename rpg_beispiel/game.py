@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 import random
 import os
 import time
 import subprocess
 import sys
+from collections import OrderedDict
 from pathlib import Path
 
 from i18n_wrapper import I18nEngine
@@ -14,7 +17,9 @@ LOGBOOK_FILE = BASE_DIR / "knowledge.bin"
 
 SHARD_TOKENS = ["000W10", "000W11"]
 DEFAULT_SHARD_TOKEN = SHARD_TOKENS[0]
+DEFAULT_SECTOR_ID = "000W10"
 CATALOG_CACHE = {}
+sector_registry = OrderedDict()
 
 
 def ensure_catalog_cache():
@@ -113,6 +118,129 @@ WORLD_EVENTS = {
     },
 }
 
+SECTOR_TEMPLATES = [
+    {"name": "Nebula Drift", "type": "Cosmic", "difficulty": 2, "level_req": 6, "description": "A drift of neon data clouds steps into existence."},
+    {"name": "Iron Bastion", "type": "Industrial", "difficulty": 3, "level_req": 9, "description": "A fortified core torches sending pulses across the grid."},
+    {"name": "Pulse Abyss", "type": "Corrupted", "difficulty": 4, "level_req": 12, "description": "A bottomless rumble of corrupted packets and shimmering void."},
+]
+
+CALR_TEMPLATES = {
+    "core_collective": {
+        "label_token": "000R50",
+        "fragments": ["000R10", "000R11"],
+        "threshold": 10,
+        "priority": 1,
+    },
+    "aurora_syndicate": {
+        "label_token": "000R51",
+        "fragments": ["000R12", "000R13"],
+        "threshold": 8,
+        "priority": 2,
+    },
+}
+
+CALR_EVENT_BINDINGS = {
+    "000E99": "core_collective",
+    "000E98": "aurora_syndicate",
+}
+
+CALR_KNOWLEDGE_FRAGMENTS = {
+    "000E20": "000R20",
+    "000E21": "000R21",
+    "000E23": "000R22",
+}
+
+dynamic_sector_counter = 0
+
+
+def register_sector_entry(sector_id, name, type_, token=None, file=None, difficulty=0, level_offset=0, description=None, dynamic=False):
+    sector_registry[sector_id] = {
+        "name": name,
+        "type": type_,
+        "token": token,
+        "file": file,
+        "difficulty": difficulty,
+        "level_offset": level_offset,
+        "description": description,
+        "dynamic": dynamic,
+    }
+
+
+def init_sector_registry():
+    sector_registry.clear()
+    register_sector_entry(
+        "000W10",
+        "Alpha-Prime",
+        "Industrial",
+        token="000W10",
+        file=BASE_DIR / "sector_alpha.txt",
+        difficulty=0,
+        level_offset=0,
+        description="Alpha-Prime ist weiterhin das Herzstück.",
+    )
+    register_sector_entry(
+        "000W11",
+        "Daten-Wüste",
+        "Corrupted",
+        token="000W11",
+        file=BASE_DIR / "sector_wasteland.txt",
+        difficulty=1,
+        level_offset=1,
+        description="Die Daten-Wüste pulsiert mit Hitze und Fragmenten.",
+    )
+ 
+init_sector_registry()
+
+
+def set_sector_from_registry(engine: I18nEngine, player: Player, sector_id: str, announce=False):
+    info = sector_registry.get(sector_id)
+    if not info:
+        return False
+    player.current_sector_id = sector_id
+    player.shard_name = info["name"]
+    player.shard_type = info["type"]
+    player.current_shard_file = info.get("file")
+    if info.get("token"):
+        player.current_shard_token = info["token"]
+    if announce and info.get("description"):
+        print(info["description"])
+    return True
+
+
+def generate_dynamic_sector(template):
+    global dynamic_sector_counter
+    dynamic_sector_counter += 1
+    sector_id = f"DYN{dynamic_sector_counter:02d}"
+    register_sector_entry(
+        sector_id,
+        template["name"],
+        template["type"],
+        file=None,
+        difficulty=template["difficulty"],
+        level_offset=template["difficulty"],
+        description=template["description"],
+        dynamic=True,
+    )
+    return sector_id
+
+
+def expand_sectors_for_level(player: Player, engine: I18nEngine):
+    for template in SECTOR_TEMPLATES:
+        exists = any(info["name"] == template["name"] for info in sector_registry.values())
+        if player.lvl >= template["level_req"] and not exists:
+            new_id = generate_dynamic_sector(template)
+            print(f">>> Neuer Sektor entdeckt: {template['name']} ({template['type']})")
+            return new_id
+    return None
+
+
+def get_sector_info(player: Player):
+    info = sector_registry.get(player.current_sector_id)
+    if info:
+        return info
+    return next(iter(sector_registry.values()), None)
+
+
 FACTIONS = {
     "core_collective": {
         "name_token": "000G10",
@@ -137,6 +265,32 @@ KNOWLEDGE_FACTION_INFLUENCE = {
 WORLD_EVENT_FACTION_EFFECTS = {
     "000E99": [("core_collective", -5)],
     "000E98": [("aurora_syndicate", 5)],
+}
+
+CALR_TEMPLATES = {
+    "core_collective": {
+        "label_token": "000R50",
+        "fragments": ["000R10", "000R11"],
+        "threshold": 10,
+        "priority": 1,
+    },
+    "aurora_syndicate": {
+        "label_token": "000R51",
+        "fragments": ["000R12", "000R13"],
+        "threshold": 8,
+        "priority": 2,
+    },
+}
+
+CALR_EVENT_BINDINGS = {
+    "000E99": "core_collective",
+    "000E98": "aurora_syndicate",
+}
+
+CALR_KNOWLEDGE_FRAGMENTS = {
+    "000E20": "000R20",
+    "000E21": "000R21",
+    "000E23": "000R22",
 }
 
 KNOWLEDGE_DIALOGUE_MAP = {
@@ -169,6 +323,8 @@ class Player:
         self.current_shard_file = None
         self.shard_name = "Core"
         self.shard_type = "Matrix"
+        self.current_sector_id = DEFAULT_SECTOR_ID
+        self.faction_standing = {k: 0 for k in FACTIONS}
         self.faction_standing = {k: 0 for k in FACTIONS}
 
     def trait_bits(self):
@@ -201,6 +357,7 @@ class Player:
         traits_bits = self.trait_bits()
         knowledge_str = ";".join(self.knowledge_packages)
         faction_str = ";".join(f"{k}:{int(self.faction_standing.get(k,0))}" for k in sorted(FACTIONS))
+        sector_id = self.current_sector_id or DEFAULT_SECTOR_ID
         data = ",".join([
             str(int(self.lvl)),
             str(int(self.xp)),
@@ -217,6 +374,7 @@ class Player:
             knowledge_str,
             faction_str,
             self.current_shard_token or DEFAULT_SHARD_TOKEN,
+            sector_id,
         ])
         with open("savegame.raw", "w") as f: f.write(data)
         print(engine.translate("000107"))
@@ -353,6 +511,38 @@ def core_stabilizer_effect(player: Player):
 def aurora_relay_effect(player: Player):
     player.crit_chance = min(1.0, player.crit_chance + 0.1)
     player.kits += 1
+
+
+def compose_calr_script(engine: I18nEngine, player: Player):
+    leaders = []
+    for faction_key, template in CALR_TEMPLATES.items():
+        standing = player.faction_standing.get(faction_key, 0)
+        if standing >= template["threshold"]:
+            leaders.append((standing, template))
+    event_token = get_active_world_event_token()
+    if event_token:
+        binding = CALR_EVENT_BINDINGS.get(event_token)
+        if binding:
+            template = CALR_TEMPLATES.get(binding)
+            if template:
+                standing = player.faction_standing.get(binding, 0) + 2
+                leaders.append((standing, template))
+    if not leaders:
+        return None
+    best = max(leaders, key=lambda item: (item[0], item[1].get("priority", 0)))
+    template = best[1]
+    fragments = []
+    for token_id in template["fragments"]:
+        fragments.append(translate_with_fallback(engine, token_id))
+    for token in player_known_tokens(player):
+        fragment = CALR_KNOWLEDGE_FRAGMENTS.get(token)
+        if fragment:
+            fragments.append(translate_with_fallback(engine, fragment))
+    fragments = [f for f in fragments if f]
+    if not fragments:
+        return None
+    label = translate_with_fallback(engine, template["label_token"])
+    return "|".join([label] + fragments)
 
 
 def adjust_faction(engine: I18nEngine, player: Player, faction_key: str, delta: int, source: str | None = None):
@@ -550,6 +740,7 @@ def apply_shard_token(engine: I18nEngine, player: Player, token_id: str, announc
     player.shard_type = info.get("TYPE", player.shard_type)
     if announce:
         print(f">>> SHARD GELADEN: {player.shard_name} ({player.shard_type})")
+    set_sector_from_registry(engine, player, token_id)
     return True
 
 
@@ -575,25 +766,31 @@ def show_navigation(engine: I18nEngine, player: Player):
     print(translate_with_fallback(engine, "000W01", [player.shard_name, player.shard_type]))
     print(translate_with_fallback(engine, "000W02"))
     print(translate_with_fallback(engine, "000W06"))
-    for idx, token in enumerate(SHARD_TOKENS, start=1):
-        meta = parse_shard_token(engine, token)
-        display = meta.get("NAME") or catalog_lookup(token) or token
-        typ = meta.get("TYPE", "Matrix")
-        marker = " (aktuell)" if token == player.current_shard_token else ""
-        print(f"({idx}) {display} [{typ}]{marker}")
+    sector_ids = list(sector_registry.keys())
+    deal_map = {}
+    for idx, sector_id in enumerate(sector_ids, start=1):
+        info = sector_registry[sector_id]
+        marker = " (aktuell)" if sector_id == player.current_sector_id else ""
+        print(f"({idx}) {info['name']} [{info['type']}]{marker}")
+        deal_map[str(idx)] = sector_id
     choice = input("> ").strip()
     if not choice.isdigit():
         return
     target_idx = int(choice) - 1
-    if target_idx < 0 or target_idx >= len(SHARD_TOKENS):
+    if target_idx < 0 or target_idx >= len(sector_ids):
         return
-    target = SHARD_TOKENS[target_idx]
-    if target == player.current_shard_token:
+    target_sector = sector_ids[target_idx]
+    info = sector_registry[target_sector]
+    if target_sector == player.current_sector_id:
         print(translate_with_fallback(engine, "000W03", [player.shard_name]))
         return
-    if apply_shard_token(engine, player, target, announce=True):
-        refresh_runtime_catalog(engine, player)
-        print(translate_with_fallback(engine, "000W04", [player.shard_name, player.shard_type]))
+    if info.get("token"):
+        if apply_shard_token(engine, player, info["token"], announce=True):
+            set_sector_from_registry(engine, player, target_sector)
+            refresh_runtime_catalog(engine, player)
+            print(translate_with_fallback(engine, "000W04", [player.shard_name, player.shard_type]))
+    else:
+        set_sector_from_registry(engine, player, target_sector, announce=True)
 
 
 def append_logbook_entry(pkg_id: str, tokens):
@@ -625,18 +822,16 @@ def read_logbook_entries():
     return entries
 
 
-def execute_token_script(player: Player, engine: I18nEngine, token_id: str):
-    script = engine.translate(token_id)
-    if "⟦" in script:
-        return {}
-    effects = {}
+def parse_script(script: str):
     parts = script.split("|")
     if len(parts) > 1:
-        name = parts[0]
-        clauses = parts[1:]
-    else:
-        name = script
-        clauses = []
+        return parts[0], parts[1:]
+    return script, []
+
+
+def run_script(player: Player, script: str, label: str):
+    name, clauses = parse_script(script)
+    effects = {}
     commands = []
     for clause in clauses:
         if not clause.strip():
@@ -667,9 +862,251 @@ def execute_token_script(player: Player, engine: I18nEngine, token_id: str):
         elif key == "DEF_ADD":
             effects["defense"] = effects.get("defense", 0) + val
             commands.append(f"{key}+{val}")
+        elif key == "ENEMY_HP_ADD":
+            effects["enemy_hp_add"] = effects.get("enemy_hp_add", 0) + val
+            commands.append(f"{key}+{val}")
+        elif key == "ENEMY_HP_MUL":
+            effects["enemy_hp_mul"] = effects.get("enemy_hp_mul", 1.0) * val
+            commands.append(f"{key}*{val}")
+        elif key == "ENEMY_ATK_ADD":
+            effects["enemy_atk_add"] = effects.get("enemy_atk_add", 0) + val
+            commands.append(f"{key}+{val}")
+        elif key == "ENEMY_ATK_MUL":
+            effects["enemy_atk_mul"] = effects.get("enemy_atk_mul", 1.0) * val
+            commands.append(f"{key}*{val}")
     detail = f" ({name})" if name else ""
-    print(f">>> Modul {token_id}{detail} ausgeführt. Befehle: {', '.join(commands)}.")
+    print(f">>> Modul {label}{detail} ausgeführt. Befehle: {', '.join(commands)}.")
     return effects
+
+
+def apply_enemy_effects(e_hp: float, e_atk: float, effect_sources: list[dict] | None):
+    hp_mul = 1.0
+    atk_mul = 1.0
+    hp_add = 0.0
+    atk_add = 0.0
+    for source in (effect_sources or []):
+        if not source:
+            continue
+        hp_mul *= source.get("enemy_hp_mul", 1.0)
+        atk_mul *= source.get("enemy_atk_mul", 1.0)
+        hp_add += source.get("enemy_hp_add", 0.0)
+        atk_add += source.get("enemy_atk_add", 0.0)
+    scaled_hp = max(1, int((e_hp + hp_add) * hp_mul))
+    scaled_atk = max(1, int((e_atk + atk_add) * atk_mul))
+    return scaled_hp, scaled_atk
+
+
+ENEMY_SCALING_TABLE = [
+    {"level": 1, "token": "000S60"},
+    {"level": 5, "token": "000S61"},
+    {"level": 10, "token": "000S62"},
+]
+
+
+def compose_enemy_scaling_script(engine: I18nEngine, player: Player):
+    choices = [entry for entry in ENEMY_SCALING_TABLE if player.lvl >= entry["level"]]
+    if not choices:
+        return None
+    choice = max(choices, key=lambda item: item["level"])
+    script = resolve_catalog_token(engine, choice["token"])
+    if "⟦" in script:
+        return None
+    return script
+
+
+def parse_menu_entries(engine: I18nEngine, token_id: str = "000M101"):
+    raw = translate_with_fallback(engine, token_id)
+    if not raw.strip():
+        return []
+    entries = []
+    for part in raw.split("|"):
+        segment = part.strip()
+        if not segment:
+            continue
+        pieces = [p.strip() for p in segment.split(":", 2)]
+        if len(pieces) != 3:
+            continue
+        number, key, label = pieces
+        entries.append({"number": number, "key": key.upper(), "label": label})
+    return entries
+
+
+MENU_ACTIONS = {}
+
+
+def register_menu_action(key):
+    def decorator(func):
+        MENU_ACTIONS[key] = func
+        return func
+    return decorator
+
+
+def execute_menu_key(engine: I18nEngine, player: Player, key: str):
+    handler = MENU_ACTIONS.get(key.upper())
+    if not handler:
+        return None
+    return handler(engine, player)
+
+
+LEGACY_MENU_MAP = {
+    "1": "SCAN",
+    "2": "NAV",
+    "3": "SHOP",
+    "4": "STATUS",
+    "5": "HIGH",
+    "6": "SAVE",
+    "7": "EVENT",
+}
+
+
+@register_menu_action("SCAN")
+def handle_scan_action(engine: I18nEngine, player: Player):
+    run_battle(player, engine)
+
+
+@register_menu_action("NAV")
+def handle_navigation_action(engine: I18nEngine, player: Player):
+    show_navigation(engine, player)
+
+
+@register_menu_action("SHOP")
+def handle_shop_action(engine: I18nEngine, player: Player):
+    if player.kills < 3:
+        print(engine.translate("000701", [int(3 - player.kills)]))
+        return
+    print("\n" + engine.translate("000A04") + "\n" + engine.translate("000700"))
+    for line in knowledge_dialogue_lines(engine, player, "shop"):
+        print(line)
+    print(engine.translate("000C20", [int(player.credits)]))
+    available_deals = get_available_faction_shop_deals(player)
+    deal_options = {}
+    option_base = 8
+    for deal in available_deals:
+        price = compute_deal_price(player, deal)
+        label = translate_with_fallback(engine, deal["name_token"])
+        print(f"({option_base}) {label} [{price} Cr]")
+        deal_options[str(option_base)] = (deal, price)
+        option_base += 1
+    sc = input(engine.translate("000C21") + "\n> ").strip()
+    if sc == "1" and player.credits >= 150:
+        player.credits -= 150
+        player.kits += 1
+        print(engine.translate("000C22"))
+    elif sc == "2" and player.credits >= 500:
+        player.credits -= 500
+        player.weapon.atk_mod += 5
+        print(engine.translate("000C22"))
+    elif sc == "3":
+        next_trait = next((t for t in TRAIT_CONFIG if not player.has_trait(t["id"])), None)
+        if not next_trait:
+            print(engine.translate("000C27"))
+        elif player.credits >= next_trait["cost"]:
+            player.credits -= next_trait["cost"]
+            unlock_trait(engine, player, next_trait["id"])
+            print(
+                engine.translate(
+                    "000C24",
+                    [
+                        engine.translate(next_trait["name_token"]),
+                        engine.translate(next_trait["desc_token"]),
+                    ],
+                )
+            )
+        else:
+            print(engine.translate("000C26", [next_trait["cost"]]))
+    elif sc == "4":
+        next_pkg = next((pid for pid in KNOWLEDGE_PACKAGES if pid not in player.knowledge_packages), None)
+        if not next_pkg:
+            print(engine.translate("000C28"))
+        else:
+            cost = KNOWLEDGE_PACKAGES[next_pkg]["cost"]
+            if player.credits >= cost:
+                player.credits -= cost
+                unlock_knowledge(engine, player, next_pkg)
+                pkg_tokens = ", ".join(KNOWLEDGE_PACKAGES[next_pkg]["tokens"])
+                print(engine.translate("000C25", [pkg_tokens]))
+            else:
+                print(engine.translate("000C26", [cost]))
+    elif sc in deal_options:
+        deal, price = deal_options[sc]
+        if player.credits >= price:
+            player.credits -= price
+            deal["effect"](player)
+            print(translate_with_fallback(engine, "000C32", [translate_with_fallback(engine, deal["name_token"]), price]))
+        else:
+            print(engine.translate("000C26", [price]))
+    if input("Boss fordern? (j/n) ") == "j":
+        run_battle(player, engine, True)
+
+
+@register_menu_action("STATUS")
+def handle_status_action(engine: I18nEngine, player: Player):
+    print(f"\nSTATUS: LVL {int(player.lvl)} | HP: {int(player.hp)} | Credits: {int(player.credits)}")
+    print(f"Standort: {player.shard_name} [{player.shard_type}]")
+    print(engine.translate("000D01"))
+    print(engine.translate("000D02", [int(player.quest_kills), int(player.quest_target)]))
+    print("Erfolge: " + (", ".join([engine.translate(a) for a in player.achievements]) if player.achievements else "Keine"))
+    trait_line = trait_message(engine, player)
+    if trait_line:
+        print(trait_line)
+    for line in knowledge_messages(engine, player):
+        print(line)
+    for line in faction_status_lines(engine, player):
+        print(line)
+    sub = input(engine.translate("000202") + "\n> ")
+    if sub == "1" and player.kits > 0:
+        player.hp = min(player.max_hp, player.hp + 40)
+        player.kits -= 1
+    elif sub == "2":
+        for i, w in enumerate(player.available_weapons):
+            print(f"({i}) {engine.translate(w.desc_t)}")
+        sel = input("> ")
+        player.weapon = (
+            player.available_weapons[int(sel)]
+            if sel.isdigit() and int(sel) < len(player.available_weapons)
+            else player.weapon
+        )
+
+
+@register_menu_action("HIGH")
+def handle_highscore_action(engine: I18nEngine, player: Player):
+    print("\n" + engine.translate("000105"))
+
+
+@register_menu_action("SAVE")
+def handle_save_action(engine: I18nEngine, player: Player):
+    player.save_game(engine)
+    return "EXIT"
+
+
+@register_menu_action("EVENT")
+def handle_event_action(engine: I18nEngine, player: Player):
+    world_event_menu(engine, player)
+
+
+def handle_menu_input(engine: I18nEngine, player: Player, choice: str, entries: list[dict]):
+    if not choice:
+        return None
+    if entries:
+        selected = next((entry for entry in entries if entry["number"] == choice), None)
+        if not selected:
+            return None
+        return execute_menu_key(engine, player, selected["key"])
+    key = LEGACY_MENU_MAP.get(choice)
+    if not key:
+        return None
+    return execute_menu_key(engine, player, key)
+
+
+def execute_token_script(player: Player, engine: I18nEngine, token_id: str):
+    script = resolve_catalog_token(engine, token_id)
+    if "⟦" in script:
+        return {}
+    return run_script(player, script, token_id)
+
+
+def execute_dynamic_script(player: Player, script: str, label: str = "CALR"):
+    return run_script(player, script, label)
 
 
 LORE_TOKENS = ["000B10", "000B11", "000B12", "000B13", "000B14", "000B15"]
@@ -691,6 +1128,16 @@ def run_battle(player, engine, is_boss=False):
         if battle_msg:
             print("\n" + translate_with_fallback(engine, battle_msg))
 
+    calr_script = compose_calr_script(engine, player)
+    calr_effects = None
+    if calr_script:
+        calr_effects = execute_dynamic_script(player, calr_script, "CALR")
+
+    scaling_script = compose_enemy_scaling_script(engine, player)
+    scaling_effects = None
+    if scaling_script:
+        scaling_effects = execute_dynamic_script(player, scaling_script, "SCALING")
+
     lore = " ".join(engine.translate(tok) for tok in random.sample(LORE_TOKENS, 3))
     print("\n" + lore)
 
@@ -707,12 +1154,14 @@ def run_battle(player, engine, is_boss=False):
         physics_bonus = random.randint(5, 20)
         print(engine.translate("000C12", [int(physics_bonus)]))
 
-    e_name = "SubQG Core" if is_boss else "Virus-Drohne"
+    enemy_token = "000E71" if is_boss else "000E70"
+    e_name = translate_with_fallback(engine, enemy_token)
     e_hp = 250 if is_boss else 40 + (player.lvl * 10)
     e_atk = 8 + player.lvl if not is_boss else 15
     boss_phase_triggered = not is_boss
     original_hp = e_hp
     
+    e_hp, e_atk = apply_enemy_effects(e_hp, e_atk, [calr_effects, scaling_effects])
     print(engine.translate("000300", [e_name, int(e_hp), player.shard_name]))
     print(engine.translate("000A03" if is_boss else "000A01"))
 
@@ -737,32 +1186,48 @@ def run_battle(player, engine, is_boss=False):
             if random.random() < (player.crit_chance + player.weapon.crit_mod):
                 dmg *= 2; print(engine.translate("000303", [player.name, int(dmg)]))
             e_hp -= dmg; print(engine.translate("000301", [player.name, e_name, int(dmg)]))
+            if e_hp <= 0:
+                break
         if e_hp > 0:
             player.hp -= e_atk; print(engine.translate("000301", [e_name, player.name, int(e_atk)]))
 
-        if player.hp > 0:
-            cr = random.randint(40, 80); player.credits += cr; player.xp += 50; player.kills += 1; player.quest_kills += 1
-            apply_faction_influences(engine, player, SHARD_FACTION_INFLUENCE.get(player.current_shard_token, []), "Sektor")
-            print(engine.translate("000302", [e_name, 50, cr]))
-            if is_boss:
-                print(engine.translate("000B03"))
-                if "000F03" not in player.achievements:
-                    player.achievements.append("000F03")
-                return "WIN"
-            if player.kills == 1 and "000F01" not in player.achievements:
-                player.achievements.append("000F01")
-                print(engine.translate("000F01"))
-            if player.lvl >= 5 and "000F02" not in player.achievements:
-                player.achievements.append("000F02")
-                print(engine.translate("000F02"))
-            if player.quest_kills >= player.quest_target:
-                b = int(player.quest_target * 50); player.credits += b
-                print("\n" + engine.translate("000D03", [b]))
-                player.quest_kills, player.quest_target = 0, player.quest_target + 5
-            if player.xp >= 100:
-                player.lvl += 1; player.atk += 5; player.max_hp += 20; player.hp = player.max_hp; player.xp = 0
-                print(engine.translate("000103", [player.name, int(player.lvl), int(player.atk)]))
-            return True
+    if player.hp <= 0:
+        return False
+
+    if e_hp <= 0:
+        cr = random.randint(40, 80)
+        player.credits += cr
+        player.xp += 50
+        player.kills += 1
+        player.quest_kills += 1
+        apply_faction_influences(engine, player, SHARD_FACTION_INFLUENCE.get(player.current_shard_token, []), "Sektor")
+        print(engine.translate("000302", [e_name, 50, cr]))
+        if is_boss:
+            print(engine.translate("000B03"))
+            if "000F03" not in player.achievements:
+                player.achievements.append("000F03")
+            return "WIN"
+        if player.kills == 1 and "000F01" not in player.achievements:
+            player.achievements.append("000F01")
+            print(engine.translate("000F01"))
+        if player.lvl >= 5 and "000F02" not in player.achievements:
+            player.achievements.append("000F02")
+            print(engine.translate("000F02"))
+        if player.quest_kills >= player.quest_target:
+            b = int(player.quest_target * 50)
+            player.credits += b
+            print("\n" + engine.translate("000D03", [b]))
+            player.quest_kills, player.quest_target = 0, player.quest_target + 5
+        if player.xp >= 100:
+            player.lvl += 1
+            player.atk += 5
+            player.max_hp += 20
+            player.hp = player.max_hp
+            player.xp = 0
+            print(engine.translate("000103", [player.name, int(player.lvl), int(player.atk)]))
+        return True
+
+    return False
     return False
 
 def main():
@@ -788,114 +1253,25 @@ def main():
         if player.hp <= 0:
             print("\n" + engine.translate("000B99"))
             break
-        print("\n" + engine.translate("000200"))
+        menu_entries = parse_menu_entries(engine)
+        if menu_entries:
+            header_text = translate_with_fallback(engine, "000M100").strip()
+            if header_text:
+                print("\n" + header_text)
+            else:
+                print()
+            for entry in menu_entries:
+                print(f"({entry['number']}) {entry['label']}")
+        else:
+            print("\n" + engine.translate("000200"))
         c = input("> ").strip()
         if c == "DEADBEEF":
             player.admin_mode = True
             print(engine.translate("000106"))
-        elif c == "1":
-            run_battle(player, engine)
-        elif c == "2":
-            show_navigation(engine, player)
-        elif c == "3":
-            if player.kills < 3:
-                print(engine.translate("000701", [int(3 - player.kills)]))
-            else:
-                print("\n" + engine.translate("000A04") + "\n" + engine.translate("000700"))
-                for line in knowledge_dialogue_lines(engine, player, "shop"):
-                    print(line)
-                print(engine.translate("000C20", [int(player.credits)]))
-                available_deals = get_available_faction_shop_deals(player)
-                deal_options = {}
-                option_base = 8
-                for deal in available_deals:
-                    price = compute_deal_price(player, deal)
-                    label = translate_with_fallback(engine, deal["name_token"])
-                    print(f"({option_base}) {label} [{price} Cr]")
-                    deal_options[str(option_base)] = (deal, price)
-                    option_base += 1
-                sc = input(engine.translate("000C21") + "\n> ").strip()
-                if sc == "1" and player.credits >= 150:
-                    player.credits -= 150
-                    player.kits += 1
-                    print(engine.translate("000C22"))
-                elif sc == "2" and player.credits >= 500:
-                    player.credits -= 500
-                    player.weapon.atk_mod += 5
-                    print(engine.translate("000C22"))
-                elif sc == "3":
-                    next_trait = next((t for t in TRAIT_CONFIG if not player.has_trait(t["id"])), None)
-                    if not next_trait:
-                        print(engine.translate("000C27"))
-                    elif player.credits >= next_trait["cost"]:
-                        player.credits -= next_trait["cost"]
-                        unlock_trait(engine, player, next_trait["id"])
-                        print(
-                            engine.translate(
-                                "000C24",
-                                [
-                                    engine.translate(next_trait["name_token"]),
-                                    engine.translate(next_trait["desc_token"]),
-                                ],
-                            )
-                        )
-                    else:
-                        print(engine.translate("000C26", [next_trait["cost"]]))
-                elif sc == "4":
-                    next_pkg = next((pid for pid in KNOWLEDGE_PACKAGES if pid not in player.knowledge_packages), None)
-                    if not next_pkg:
-                        print(engine.translate("000C28"))
-                    else:
-                        cost = KNOWLEDGE_PACKAGES[next_pkg]["cost"]
-                        if player.credits >= cost:
-                            player.credits -= cost
-                            unlock_knowledge(engine, player, next_pkg)
-                            pkg_tokens = ", ".join(KNOWLEDGE_PACKAGES[next_pkg]["tokens"])
-                            print(engine.translate("000C25", [pkg_tokens]))
-                        else:
-                            print(engine.translate("000C26", [cost]))
-                elif sc in deal_options:
-                    deal, price = deal_options[sc]
-                    if player.credits >= price:
-                        player.credits -= price
-                        deal["effect"](player)
-                        print(translate_with_fallback(engine, "000C32", [translate_with_fallback(engine, deal["name_token"]), price]))
-                    else:
-                        print(engine.translate("000C26", [price]))
-                if input("Boss fordern? (j/n) ") == "j":
-                    run_battle(player, engine, True)
-        elif c == "4":
-            print(f"\nSTATUS: LVL {int(player.lvl)} | HP: {int(player.hp)} | Credits: {int(player.credits)}")
-            print(f"Standort: {player.shard_name} [{player.shard_type}]")
-            print(engine.translate("000D01"))
-            print(engine.translate("000D02", [int(player.quest_kills), int(player.quest_target)]))
-            print("Erfolge: " + (", ".join([engine.translate(a) for a in player.achievements]) if player.achievements else "Keine"))
-            trait_line = trait_message(engine, player)
-            if trait_line: print(trait_line)
-            for line in knowledge_messages(engine, player):
-                print(line)
-            for line in faction_status_lines(engine, player):
-                print(line)
-            sub = input(engine.translate("000202") + "\n> ")
-            if sub == "1" and player.kits > 0:
-                player.hp = min(player.max_hp, player.hp + 40)
-                player.kits -= 1
-            elif sub == "2":
-                for i, w in enumerate(player.available_weapons):
-                    print(f"({i}) {engine.translate(w.desc_t)}")
-                sel = input("> ")
-                player.weapon = (
-                    player.available_weapons[int(sel)]
-                    if sel.isdigit() and int(sel) < len(player.available_weapons)
-                    else player.weapon
-                )
-        elif c == "5":
-            print("\n" + engine.translate("000105"))
-        elif c == "6":
-            player.save_game(engine)
+            continue
+        outcome = handle_menu_input(engine, player, c, menu_entries)
+        if outcome == "EXIT":
             break
-        elif c == "7":
-            world_event_menu(engine, player)
     input("\nMatrix-Sitzung beendet...")
 
 
