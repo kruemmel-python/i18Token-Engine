@@ -1,4 +1,5 @@
 # Token-basierte I18n Engine (Native Core)
+![Uploading Architecture.png…]()
 
 ![C++](https://img.shields.io/badge/C++-17-blue.svg)
 ![Build](https://img.shields.io/badge/build-passing-brightgreen.svg)
@@ -294,5 +295,6 @@ Die Engine befindet sich im Freeze-Zustand, sobald folgende Artefakte bereitsteh
 * **tests/run_tests.py** lädt fünf Kataloge (`tests/catalogs/*.txt`) im Strict Mode, führt `i18n_check`, `translate` und `translate_plural` aus, verifiziert Meta-Infos (inkl. `note`), `RESULT_TOO_LARGE` sowie `=`-Escapes. Ein grüner Run bedeutet „Asset-Paket ist stabil“ und contract-conform.
 
 Führen Sie `python tests/run_tests.py` aus, bevor Sie neue Compiler-Versionen oder Release-Pakete bauen. Änderungen, die den Contract berühren, müssen vorher dokumentiert und getestet werden.
+
 
 © 2024 Token-Based I18n Engine Project
