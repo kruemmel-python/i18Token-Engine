@@ -1,0 +1,13 @@
+@meta locale:de
+000H10: Ein Fragmentrooster flackert auf. Der Operator empfängt Bruchteile einer alten Mission: 'Stabilität sichern oder alles verlieren.'
+000H11: (1) Katakomben folgen
+000H12: (2) Gildenlogs analysieren
+000H13: Die Archivkonsole offenbart einen QR-Code: 'Die Resonanz der Aurora ist der Schlüssel.'
+000H14: Die Logs zeigen eine Abweichung in der Map: 'Der Schattenkern zieht Energie aus den Shards.'
+000H15: (1) Aurora folgen
+000H16: (2) Stabilitäts-Taskforce warnen
+000H17: (1) Schattenkern orten
+000H18: (2) Die Map anpassen
+000H20: NODE:intro|TEXT:000H10|CHOICE1:000H11:archives|CHOICE2:000H12:logs|STAB_SUB:5|ENEMY_ATK_MUL:1.05
+000H21: NODE:archives|TEXT:000H13|CHOICE1:000H15:aurora|CHOICE2:000H16:taskforce|CHAPTER:2|STAB_SUB:10|ENEMY_HP_MUL:1.1
+000H22: NODE:logs|TEXT:000H14|CHOICE1:000H17:shadow|CHOICE2:000H18:map|CHAPTER:2|ENEMY_HP_ADD:20

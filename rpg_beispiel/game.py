@@ -21,6 +21,8 @@ DEFAULT_SHARD_TOKEN = SHARD_TOKENS[0]
 DEFAULT_SECTOR_ID = "000W10"
 CATALOG_CACHE = {}
 sector_registry = OrderedDict()
+STORY_DIR = BASE_DIR / "story_chapters"
+DEFAULT_STORY_CHAPTER = 1
 
 
 def ensure_catalog_cache():
@@ -327,6 +329,13 @@ class Player:
         self.current_sector_id = DEFAULT_SECTOR_ID
         self.faction_standing = {k: 0 for k in FACTIONS}
         self.faction_standing = {k: 0 for k in FACTIONS}
+        self.story_state = "intro"
+        self.story_chapter = DEFAULT_STORY_CHAPTER
+        self.story_nodes = {}
+        self.story_history = []
+        self.story_effects = {}
+        self.story_state = "intro"
+        self.story_history = []
 
     def trait_bits(self):
         return "".join("1" if trait["id"] in self.traits_active else "0" for trait in TRAIT_CONFIG)
@@ -376,6 +385,8 @@ class Player:
             faction_str,
             self.current_shard_token or DEFAULT_SHARD_TOKEN,
             sector_id,
+            self.story_state,
+            str(self.story_chapter),
         ])
         with open("savegame.raw", "w") as f: f.write(data)
         print(engine.translate("000107"))
@@ -414,6 +425,13 @@ class Player:
                     shard_token = d[14]
                 if shard_token:
                     p.current_shard_token = shard_token
+                if len(d) > 16 and d[16]:
+                    p.story_state = d[16]
+                if len(d) > 17 and d[17]:
+                    try:
+                        p.story_chapter = int(d[17])
+                    except ValueError:
+                        pass
                 return p
         except: return None
 
@@ -758,6 +776,10 @@ def refresh_runtime_catalog(engine: I18nEngine, player: Player):
         path = event.get("file")
         if path and path.exists():
             layers.append(path.read_text())
+
+    story_path = story_chapter_path(player)
+    if story_path.exists():
+        layers.append(story_path.read_text())
     payload = "\n".join(layers)
     RUNTIME_CATALOG.write_text(payload)
     create_binary_package(RUNTIME_CATALOG, RUNTIME_CATALOG_BIN)
@@ -766,6 +788,7 @@ def refresh_runtime_catalog(engine: I18nEngine, player: Player):
         loaded_binary = engine.load_file(str(RUNTIME_CATALOG_BIN))
     if not loaded_binary:
         engine.load_file(str(RUNTIME_CATALOG))
+    load_story_nodes(player)
 
 
 def show_navigation(engine: I18nEngine, player: Player):
@@ -1091,6 +1114,135 @@ def handle_event_action(engine: I18nEngine, player: Player):
     world_event_menu(engine, player)
 
 
+def story_chapter_path(player: Player):
+    chapter = player.story_chapter or DEFAULT_STORY_CHAPTER
+    return STORY_DIR / f"story_chapter_{chapter}.txt"
+
+
+def parse_story_nodes(chapter_num: int):
+    path = STORY_DIR / f"story_chapter_{chapter_num}.txt"
+    nodes = {}
+    if not path.exists():
+        return nodes
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or line.startswith("@"):
+            continue
+        if ":" not in line:
+            continue
+        token, body = line.split(":", 1)
+        if "NODE" not in body.upper():
+            continue
+        node = {
+            "token": token,
+            "node_key": None,
+            "text_token": None,
+            "choices": [],
+            "effects": [],
+            "chapter": None,
+        }
+        for part in body.split("|"):
+            if ":" not in part:
+                continue
+            key, value = part.split(":", 1)
+            key = key.strip().upper()
+            value = value.strip()
+            if key == "NODE":
+                node["node_key"] = value
+            elif key == "TEXT":
+                node["text_token"] = value
+            elif key.startswith("CHOICE"):
+                label_token, _, next_key = value.partition(":")
+                node["choices"].append(
+                    {"label_token": label_token, "next": next_key or node["node_key"]}
+                )
+            elif key == "CHAPTER":
+                try:
+                    node["chapter"] = int(value)
+                except ValueError:
+                    pass
+            else:
+                node["effects"].append((key.lower(), value))
+        if node["node_key"] and node["text_token"]:
+            nodes[node["node_key"]] = node
+    return nodes
+
+
+def load_story_nodes(player: Player):
+    player.story_nodes = parse_story_nodes(player.story_chapter)
+
+
+def apply_story_effects(player: Player, node: dict):
+    effects = {}
+    for key, value in node.get("effects", []):
+        try:
+            effects[key] = float(value)
+        except ValueError:
+            effects[key] = value
+    player.story_effects = effects
+
+
+def play_story_sequence(engine: I18nEngine, player: Player):
+    while True:
+        if player.story_state == "completed":
+            return
+        node = player.story_nodes.get(player.story_state)
+        if not node:
+            return
+        text_args = [player.name, int(player.lvl), int(player.kills)]
+        text = engine.translate(node["text_token"], text_args)
+        print("\n" + ("-" * 40))
+        print(f"STORY [{node['node_key']}]: {text}")
+        apply_story_effects(player, node)
+        if not node["choices"]:
+            player.story_history.append((node["node_key"], "Abschluss"))
+            player.story_state = "completed"
+            print("Die Geschichte wurde bis hierhin gelesen.")
+            return
+        labels = []
+        for idx, choice in enumerate(node["choices"], start=1):
+            label = engine.translate(choice["label_token"])
+            print(f"({idx}) {label}")
+            labels.append((choice, label))
+        sel = input("> ").strip()
+        selected_entry = None
+        if sel.isdigit():
+            idx = int(sel) - 1
+            if 0 <= idx < len(labels):
+                selected_entry = labels[idx]
+        if not selected_entry:
+            selected_entry = labels[0]
+        choice, label = selected_entry
+        player.story_history.append((node["node_key"], label))
+        player.story_state = choice["next"] or node["node_key"]
+        next_chapter = node.get("chapter")
+        if next_chapter and next_chapter != player.story_chapter:
+            player.story_chapter = next_chapter
+            refresh_runtime_catalog(engine, player)
+            load_story_nodes(player)
+            continue
+        continue
+
+
+def trigger_story_progress(engine: I18nEngine, player: Player):
+    if player.story_state == "completed":
+        return
+    if not player.story_nodes:
+        load_story_nodes(player)
+    play_story_sequence(engine, player)
+
+
+@register_menu_action("STORY")
+def handle_story_action(engine: I18nEngine, player: Player):
+    if player.story_history:
+        print("\n--- GESCHICHTE ---")
+        for idx, (title, choice) in enumerate(player.story_history, start=1):
+            print(f"{idx}. {title} → {choice}")
+    else:
+        print("\n--- GESCHICHTE ---\nNoch keine Kapitel gelesen.")
+    trigger_story_progress(engine, player)
+
+
 def handle_menu_input(engine: I18nEngine, player: Player, choice: str, entries: list[dict]):
     if not choice:
         return None
@@ -1117,6 +1269,25 @@ def execute_dynamic_script(player: Player, script: str, label: str = "CALR"):
 
 
 LORE_TOKENS = ["000B10", "000B11", "000B12", "000B13", "000B14", "000B15"]
+MYCEL_ENEMY_TOKENS = [
+    "3aa732c6",
+    "57ee01d4",
+    "3ec17a46",
+    "1ba52628",
+    "405adf78",
+    "fa4cd27e",
+    "aa822dc9",
+    "2708dd0d",
+    "29a599c7",
+    "a562ca0d",
+]
+MYCEL_BOSS_TOKENS = [
+    "4ef7303e",
+    "1033a021",
+    "42c50bea",
+    "21dea3ef",
+    "0dff43ae",
+]
 
 
 def run_battle(player, engine, is_boss=False):
@@ -1153,22 +1324,24 @@ def run_battle(player, engine, is_boss=False):
         if player.has_trait(trait["id"]) and trait.get("module_token"):
             effects = execute_token_script(player, engine, trait["module_token"])
             total_module_penalty += effects.get("stability_penalty", 0)
+    story_penalty = player.story_effects.get("stab_sub", 0) if player.story_effects else 0
 
-    stability = max(15, stability - total_module_penalty)
+    stability = max(15, stability - total_module_penalty - story_penalty)
     print("\n" + engine.translate("000C10", [int(stability)]))
 
     if stability < 75:
         physics_bonus = random.randint(5, 20)
         print(engine.translate("000C12", [int(physics_bonus)]))
 
-    enemy_token = "000E71" if is_boss else "000E70"
+    enemy_token = random.choice(MYCEL_BOSS_TOKENS) if is_boss else random.choice(MYCEL_ENEMY_TOKENS)
     e_name = translate_with_fallback(engine, enemy_token)
     e_hp = 250 if is_boss else 40 + (player.lvl * 10)
     e_atk = 8 + player.lvl if not is_boss else 15
     boss_phase_triggered = not is_boss
     original_hp = e_hp
     
-    e_hp, e_atk = apply_enemy_effects(e_hp, e_atk, [calr_effects, scaling_effects])
+    story_effects = player.story_effects or {}
+    e_hp, e_atk = apply_enemy_effects(e_hp, e_atk, [calr_effects, scaling_effects, story_effects])
     print(engine.translate("000300", [e_name, int(e_hp), player.shard_name]))
     print(engine.translate("000A03" if is_boss else "000A01"))
 
@@ -1232,6 +1405,7 @@ def run_battle(player, engine, is_boss=False):
             player.hp = player.max_hp
             player.xp = 0
             print(engine.translate("000103", [player.name, int(player.lvl), int(player.atk)]))
+        trigger_story_progress(engine, player)
         return True
 
     return False
@@ -1254,6 +1428,7 @@ def main():
         refresh_runtime_catalog(engine, player)
     except Exception as e:
         print(f"Katalog-Load fehlgeschlagen: {e}"); return
+    trigger_story_progress(engine, player)
     print("\n" + engine.translate("000100"))
 
     while True:

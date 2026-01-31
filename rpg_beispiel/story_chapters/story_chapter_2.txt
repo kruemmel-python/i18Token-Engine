@@ -1,0 +1,20 @@
+@meta locale:de
+000H30: Die Aurora-Pulse schlagen in bunten Farben. 'Der Nexxus wird zum Leuchtfeuer.'
+000H31: Die Core-Taskforce antwortet: 'Schicke den Rift Marauder, sobald du bereit bist.'
+000H32: Die Schattenkern-Signale verdichten sich: 'Die Nexxus-Entropie wartet auf einen magnetischen Bruch.'
+000H33: Kartografin: 'Die Gateways führen tiefer.'
+000H34: Die Matrix wartet nun auf deinen nächsten Schritt. Die Legende ist in den Tokens kodiert.
+000H35: (1) Licht-Beschwörung vorbereiten
+000H36: (2) Nexus-Signale abschirmen
+000H37: (1) Rift Marauder rufen
+000H38: (2) Selbst losziehen
+000H39: (1) Magnetfeld schnell entladen
+000H40: (2) Entropie beobachten
+000H41: (1) Verbündete warnen
+000H42: (2) Gateways erkunden
+000H43: (1) Den finalen Schritt machen
+000H50: NODE:aurora|TEXT:000H30|CHOICE1:000H35:finale|CHOICE2:000H36:finale|STAB_SUB:15|ENEMY_ATK_MUL:1.2
+000H51: NODE:taskforce|TEXT:000H31|CHOICE1:000H37:finale|CHOICE2:000H38:finale|ENEMY_HP_ADD:50
+000H52: NODE:shadow|TEXT:000H32|CHOICE1:000H39:finale|CHOICE2:000H40:finale|ENEMY_HP_MUL:1.25
+000H53: NODE:map|TEXT:000H33|CHOICE1:000H41:finale|CHOICE2:000H42:finale|STAB_SUB:5
+000H54: NODE:finale|TEXT:000H34
