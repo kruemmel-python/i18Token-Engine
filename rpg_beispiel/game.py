@@ -13,6 +13,7 @@ from i18n_wrapper import I18nEngine
 BASE_DIR = Path(__file__).resolve().parent
 BASE_CATALOG = BASE_DIR / "rpg_catalog.txt"
 RUNTIME_CATALOG = BASE_DIR / "_runtime_catalog.txt"
+RUNTIME_CATALOG_BIN = BASE_DIR / "_runtime_catalog.i18n"
 LOGBOOK_FILE = BASE_DIR / "knowledge.bin"
 
 SHARD_TOKENS = ["000W10", "000W11"]
@@ -757,8 +758,14 @@ def refresh_runtime_catalog(engine: I18nEngine, player: Player):
         path = event.get("file")
         if path and path.exists():
             layers.append(path.read_text())
-    RUNTIME_CATALOG.write_text("\n".join(layers))
-    engine.load_file(str(RUNTIME_CATALOG))
+    payload = "\n".join(layers)
+    RUNTIME_CATALOG.write_text(payload)
+    create_binary_package(RUNTIME_CATALOG, RUNTIME_CATALOG_BIN)
+    loaded_binary = False
+    if RUNTIME_CATALOG_BIN.exists():
+        loaded_binary = engine.load_file(str(RUNTIME_CATALOG_BIN))
+    if not loaded_binary:
+        engine.load_file(str(RUNTIME_CATALOG))
 
 
 def show_navigation(engine: I18nEngine, player: Player):
