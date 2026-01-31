@@ -1,5 +1,6 @@
 # Token-basierte I18n Engine (Native Core)
-![Uploading Architecture.png…]()
+
+<img width="2752" height="1536" alt="Architecture" src="https://github.com/user-attachments/assets/08c402b7-308e-4eeb-9993-5968bc397962" />
 
 ![C++](https://img.shields.io/badge/C++-17-blue.svg)
 ![Build](https://img.shields.io/badge/build-passing-brightgreen.svg)
@@ -298,3 +299,4 @@ Führen Sie `python tests/run_tests.py` aus, bevor Sie neue Compiler-Versionen o
 
 
 © 2024 Token-Based I18n Engine Project
+
