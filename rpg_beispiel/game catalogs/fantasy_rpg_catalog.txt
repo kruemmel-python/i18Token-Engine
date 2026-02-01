@@ -64,6 +64,12 @@
 000WAA: Wissen
 000WAE: Matrix-Sitzung beendet...
 000WAF: Fehler: %0
+000W8A: Inventar:
+000W8B: - Leer
+000W8C: Skills: %0
+000W8D: Skills: Keine
+000W8E: Nutze das Token-Inventar (Option 9), um Items auszurüsten.
+000W8F: (%0) %1 [%2]%3
 # --- MENÜS (0002..) ---
 000200: (1) Sektor scannen (2) Navigation (3) NPC & Shop (4) Status & Quests (5) Highscores (6) Speichern & Beenden (7) Welt-Events
 000M100: --- AETHER-MENÜ ---

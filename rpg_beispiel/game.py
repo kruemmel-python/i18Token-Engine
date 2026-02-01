@@ -1816,6 +1816,7 @@ def play_story_sequence(engine: I18nEngine, player: Player):
 def trigger_story_progress(engine: I18nEngine, player: Player):
     if player.story_state == "completed":
         return
+    refresh_runtime_catalog(engine, player)
     if not player.story_nodes:
         load_story_nodes(player)
     play_story_sequence(engine, player)
