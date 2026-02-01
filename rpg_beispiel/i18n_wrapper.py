@@ -1,15 +1,23 @@
 import ctypes
 import os
 import threading
-
+import platform
 
 class I18nEngine:
-    def __init__(self, lib_path="./i18n_engine.dll"):
+    def __init__(self, lib_path=None):
+        # Falls kein Pfad angegeben wurde, wähle die passende Endung für das OS
+        if lib_path is None:
+            ext = ".so" if platform.system() == "Linux" else ".dll"
+            lib_path = f"./i18n_engine{ext}"
+            
         lib_path = os.path.abspath(lib_path)
         if not os.path.exists(lib_path):
-            raise FileNotFoundError(f"DLL nicht gefunden: {lib_path}")
+            raise FileNotFoundError(f"Library nicht gefunden: {lib_path}")
+            
         self._lib_path = lib_path
         self.lib = ctypes.CDLL(lib_path)
+        
+        # Deine originalen Signaturen
         self.lib.i18n_new.restype = ctypes.c_void_p
         self.lib.i18n_free.argtypes = [ctypes.c_void_p]
         self.lib.i18n_load_txt_file.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.c_int]
@@ -20,6 +28,7 @@ class I18nEngine:
             ctypes.POINTER(ctypes.c_char_p), ctypes.c_int,
             ctypes.c_char_p, ctypes.c_int
         ]
+        
         self._ptr = self.lib.i18n_new()
         self._ptr_lock = threading.RLock()
         self._cache = {}
@@ -48,15 +57,19 @@ class I18nEngine:
         token_upper = str(token).upper()
         args_tuple = tuple(str(a) for a in args)
         key = (token_upper, args_tuple)
+        
         with self._cache_lock:
             cached = self._cache.get(key)
         if cached is not None:
             return cached
 
         c_args = (ctypes.c_char_p * len(args))(*[a.encode("utf-8") for a in args_tuple])
+        
         with self._ptr_lock:
             ptr = self._ptr
+        
         size = self.lib.i18n_translate(ptr, token_upper.encode("utf-8"), c_args, len(args), None, 0)
+        
         if size < 0:
             result = f"⟦{token_upper}⟧"
         else:
