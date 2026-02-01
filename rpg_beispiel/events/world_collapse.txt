@@ -4,3 +4,4 @@
 000C12: [PHYSICS] Kollaps-Ströme beschleunigen deinen Schlag (+%0 Schaden).
 000B00: [WARNUNG] Der SubQG Core reagiert auf den Weltkollaps.
 000W97: Weltkollaps: Die Matrix ächzt unter einer neuen Gravitation.
+000E99: Weltkollaps – Globale Risse treiben Preise nach oben|PRICE_MUL:1.45|STAB_SUB:10

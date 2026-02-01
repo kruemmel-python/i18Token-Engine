@@ -5,7 +5,7 @@ import os
 import time
 import subprocess
 import sys
-from collections import OrderedDict
+from collections import OrderedDict, Counter
 from pathlib import Path
 
 from i18n_wrapper import I18nEngine
@@ -25,13 +25,9 @@ STORY_DIR = BASE_DIR / "story_chapters"
 DEFAULT_STORY_CHAPTER = 1
 
 
-def ensure_catalog_cache():
-    if CATALOG_CACHE:
-        return
-    if not BASE_CATALOG.exists():
-        return
-    text = BASE_CATALOG.read_text(encoding="utf-8")
-    for line in text.splitlines():
+def update_catalog_cache_from_text(raw_text: str):
+    CATALOG_CACHE.clear()
+    for line in raw_text.splitlines():
         line = line.strip()
         if not line or line.startswith("@") or line.startswith("#"):
             continue
@@ -39,6 +35,16 @@ def ensure_catalog_cache():
             continue
         key, value = line.split(":", 1)
         CATALOG_CACHE[key.strip()] = value.strip()
+
+
+def ensure_catalog_cache():
+    if CATALOG_CACHE:
+        return
+    source = RUNTIME_CATALOG if RUNTIME_CATALOG.exists() else BASE_CATALOG
+    if not source.exists():
+        return
+    text = source.read_text(encoding="utf-8")
+    update_catalog_cache_from_text(text)
 
 
 def catalog_lookup(token: str):
@@ -126,6 +132,35 @@ SECTOR_TEMPLATES = [
     {"name": "Iron Bastion", "type": "Industrial", "difficulty": 3, "level_req": 9, "description": "A fortified core torches sending pulses across the grid."},
     {"name": "Pulse Abyss", "type": "Corrupted", "difficulty": 4, "level_req": 12, "description": "A bottomless rumble of corrupted packets and shimmering void."},
 ]
+
+MARKET_PRICE_TOKEN = "000B200"
+ITEM_SLOT_KEYS = ["weapon"]
+DEFAULT_INVENTORY_TOKENS = ["000I100", "000N50"]
+DEFAULT_EQUIPPED_ITEMS = {"weapon": "000I100"}
+DEFAULT_SKILL_TOKENS = ["000K101"]
+DEFAULT_ACTIVE_SKILL = None
+
+SECTOR_RESOURCE_NODES = {
+    "000W10": ["000N50", "000N51", "000N52"],
+    "000W11": ["000N52", "000N53", "000N54"],
+}
+DEFAULT_RESOURCE_POOL = ["000N50", "000N51", "000N52", "000N53", "000N54"]
+
+RESOURCE_BASE_VALUES = {
+    "000N50": 45,
+    "000N51": 35,
+    "000N52": 60,
+    "000N53": 25,
+    "000N54": 30,
+}
+
+SKILL_TREE = {
+    "000K101": {"desc_token": "000K10", "cost": 180, "type": "passive"},
+    "000K102": {"desc_token": "000K11", "cost": 320, "type": "passive", "prereq": "000K101"},
+    "000K200": {"desc_token": "000K12", "cost": 420, "type": "active"},
+}
+
+RECIPE_TOKENS = ["000C100", "000C101"]
 
 CALR_TEMPLATES = {
     "core_collective": {
@@ -307,17 +342,15 @@ KNOWLEDGE_DIALOGUE_MAP = {
     }
 }
 
-class Weapon:
-    def __init__(self, icon_t, desc_t, atk_mod=0, crit_mod=0.0):
-        self.icon_t, self.desc_t, self.atk_mod, self.crit_mod = icon_t, desc_t, atk_mod, crit_mod
-
 class Player:
     def __init__(self, name):
         self.name, self.max_hp, self.hp, self.atk, self.lvl, self.xp = name, 100, 100, 15, 1, 0
         self.crit_chance, self.kits, self.kills, self.credits = 0.1, 1, 0, 0
         self.admin_mode = False
-        self.weapon = Weapon("000E01", "000E02", atk_mod=10)
-        self.available_weapons = [self.weapon]
+        self.inventory_tokens = list(DEFAULT_INVENTORY_TOKENS)
+        self.equipped_items = dict(DEFAULT_EQUIPPED_ITEMS)
+        self.skill_tokens = list(DEFAULT_SKILL_TOKENS)
+        self.active_skill_token = DEFAULT_ACTIVE_SKILL
         self.quest_target, self.quest_kills = 5, 0
         self.achievements = []
         self.traits_active = []
@@ -368,6 +401,10 @@ class Player:
         knowledge_str = ";".join(self.knowledge_packages)
         faction_str = ";".join(f"{k}:{int(self.faction_standing.get(k,0))}" for k in sorted(FACTIONS))
         sector_id = self.current_sector_id or DEFAULT_SECTOR_ID
+        inventory_str = ";".join(self.inventory_tokens)
+        equipped_str = ";".join(f"{slot}:{token}" for slot, token in self.equipped_items.items())
+        skill_str = ";".join(self.skill_tokens)
+        active_skill = self.active_skill_token or ""
         data = ",".join([
             str(int(self.lvl)),
             str(int(self.xp)),
@@ -387,6 +424,10 @@ class Player:
             sector_id,
             self.story_state,
             str(self.story_chapter),
+            inventory_str,
+            equipped_str,
+            skill_str,
+            active_skill,
         ])
         with open("savegame.raw", "w") as f: f.write(data)
         print(engine.translate("000107"))
@@ -432,24 +473,36 @@ class Player:
                         p.story_chapter = int(d[17])
                     except ValueError:
                         pass
+                if len(d) > 18 and d[18]:
+                    p.inventory_tokens = [tok for tok in d[18].split(";") if tok]
+                if len(d) > 19 and d[19]:
+                    for entry in d[19].split(";"):
+                        if ":" in entry:
+                            slot, tok = entry.split(":", 1)
+                            p.equipped_items[slot] = tok
+                if len(d) > 20 and d[20]:
+                    p.skill_tokens = [tok for tok in d[20].split(";") if tok]
+                if len(d) > 21 and d[21]:
+                    p.active_skill_token = d[21]
                 return p
         except: return None
 
 
-def create_binary_package(txt_path: Path, out_path: Path):
+def create_binary_package(txt_path: Path, out_path: Path) -> bool:
     script = BASE_DIR.parent / "i18n_crypt.py"
     if not script.exists():
-        return
+        return False
     try:
-        subprocess.run(
+        result = subprocess.run(
             [sys.executable, str(script), "--strict", str(txt_path), str(out_path)],
             check=False,
             cwd=BASE_DIR.parent,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
+        return result.returncode == 0 and out_path.exists()
     except Exception:
-        pass
+        return False
 
 
 def load_knowledge_package(engine: I18nEngine, pkg_id: str):
@@ -504,6 +557,9 @@ def player_known_tokens(player: Player):
     for token in tokens:
         if token not in seen:
             seen.append(token)
+    for skill in player.skill_tokens:
+        if skill not in seen:
+            seen.append(skill)
     return seen
 
 
@@ -781,12 +837,12 @@ def refresh_runtime_catalog(engine: I18nEngine, player: Player):
     if story_path.exists():
         layers.append(story_path.read_text())
     payload = "\n".join(layers)
-    RUNTIME_CATALOG.write_text(payload)
-    create_binary_package(RUNTIME_CATALOG, RUNTIME_CATALOG_BIN)
-    loaded_binary = False
-    if RUNTIME_CATALOG_BIN.exists():
-        loaded_binary = engine.load_file(str(RUNTIME_CATALOG_BIN))
-    if not loaded_binary:
+    update_catalog_cache_from_text(payload)
+    RUNTIME_CATALOG.write_text(payload, encoding="utf-8")
+    binary_created = create_binary_package(RUNTIME_CATALOG, RUNTIME_CATALOG_BIN)
+    if binary_created and RUNTIME_CATALOG_BIN.exists():
+        engine.load_file(str(RUNTIME_CATALOG_BIN))
+    else:
         engine.load_file(str(RUNTIME_CATALOG))
     load_story_nodes(player)
 
@@ -971,6 +1027,169 @@ def register_menu_action(key):
     return decorator
 
 
+@register_menu_action("INV")
+def handle_inventory_action(engine: I18nEngine, player: Player):
+    print("\n--- Token-Inventar ---")
+    counts = inventory_counts(player)
+    if not counts:
+        print("Inventar leer.")
+        return
+    active_weapon = player.equipped_items.get("weapon")
+    print(f"Ausrüstung: {get_token_label(engine, active_weapon) if active_weapon else 'Keine'}")
+    items = sorted([tok for tok in counts if tok.startswith("000I")])
+    resources = sorted([tok for tok in counts if tok.startswith("000N")])
+    if items:
+        print("Items:")
+        for idx, token in enumerate(items, start=1):
+            print(f"({idx}) {get_token_label(engine, token)} x{counts[token]}")
+        sel = input("Nummer zum Ausrüsten (Enter zum Zurück) > ").strip()
+        if sel.isdigit():
+            idx = int(sel) - 1
+            if 0 <= idx < len(items):
+                player.equipped_items["weapon"] = items[idx]
+                print(f">>> {get_token_label(engine, items[idx])} ausgerüstet.")
+    else:
+        print("Keine Items im Inventar.")
+    if resources:
+        print("Ressourcen:")
+        for token in resources:
+            print(f"- {get_token_label(engine, token)} x{counts[token]}")
+
+
+@register_menu_action("MARK")
+def handle_market_action(engine: I18nEngine, player: Player):
+    price_map = parse_market_price_token(engine)
+    multiplier, extra = get_price_modifiers(engine, player)
+    print("\n--- Token-Markt ---")
+    print(f"Preisfaktor: x{multiplier:.2f}")
+    while True:
+        print("(1) Items kaufen / (2) Ressourcen verkaufen / (3) Zurück")
+        choice = input("> ").strip()
+        if choice == "1":
+            available = sorted(price_map["items"].items())
+            if not available:
+                print("Keine Items im Markt verfügbar.")
+                continue
+            for idx, (token, base) in enumerate(available, start=1):
+                price = max(1, int(round(base * multiplier + extra)))
+                print(f"({idx}) {get_token_label(engine, token)} [{price} Cr]")
+            sel = input("Item wählen (Enter zum Abbrechen) > ").strip()
+            if not sel.isdigit():
+                continue
+            idx = int(sel) - 1
+            if 0 <= idx < len(available):
+                token, base = available[idx]
+                price = max(1, int(round(base * multiplier + extra)))
+                if player.credits >= price:
+                    player.credits -= price
+                    player.inventory_tokens.append(token)
+                    print(f">>> {get_token_label(engine, token)} erworben für {price} Cr.")
+                else:
+                    print(engine.translate("000C26", [price]))
+        elif choice == "2":
+            resource_entries = sorted({
+                tok for tok in player.inventory_tokens
+                if tok in price_map["resources"] or tok in RESOURCE_BASE_VALUES
+            })
+            if not resource_entries:
+                print("Keine verkaufbaren Ressourcen im Inventar.")
+                continue
+            for idx, token in enumerate(resource_entries, start=1):
+                base_price = price_map["resources"].get(token, RESOURCE_BASE_VALUES.get(token, 0))
+                price = max(1, int(round(base_price * 0.5 * multiplier + extra)))
+                print(f"({idx}) {get_token_label(engine, token)} [{price} Cr]")
+            sel = input("Ressource verkaufen (Enter zum Abbrechen) > ").strip()
+            if not sel.isdigit():
+                continue
+            idx = int(sel) - 1
+            if 0 <= idx < len(resource_entries):
+                token = resource_entries[idx]
+                base_price = price_map["resources"].get(token, RESOURCE_BASE_VALUES.get(token, 0))
+                price = max(1, int(round(base_price * 0.5 * multiplier + extra)))
+                remove_inventory_tokens(player, [token])
+                player.credits += price
+                print(f">>> {get_token_label(engine, token)} verkauft für {price} Cr.")
+        elif choice == "3":
+            break
+        else:
+            print("Ungültige Auswahl.")
+
+
+@register_menu_action("CRAFT")
+def handle_craft_action(engine: I18nEngine, player: Player):
+    recipes = [parse_recipe_token(engine, tid) for tid in RECIPE_TOKENS]
+    recipes = [recipe for recipe in recipes if recipe.get("requirements") and recipe.get("products")]
+    if not recipes:
+        print("Keine Rezepte verfügbar.")
+        return
+    print("\n--- Handwerk ---")
+    for idx, recipe in enumerate(recipes, start=1):
+        req_labels = ", ".join(get_token_label(engine, tok) for tok in recipe["requirements"])
+        print(f"({idx}) {recipe['label']} → {req_labels} (Kosten: {recipe['cost']} Cr)")
+    sel = input("Rezept wählen (Enter zum Abbrechen) > ").strip()
+    if not sel.isdigit():
+        return
+    idx = int(sel) - 1
+    if not (0 <= idx < len(recipes)):
+        return
+    recipe = recipes[idx]
+    if recipe["cost"] and player.credits < recipe["cost"]:
+        print(engine.translate("000C26", [recipe["cost"]]))
+        return
+    if not inventory_has_tokens(player, recipe["requirements"]):
+        missing = [tok for tok in recipe["requirements"] if player.inventory_tokens.count(tok) < recipe["requirements"].count(tok)]
+        missing_labels = ", ".join(get_token_label(engine, tok) for tok in missing)
+        print(f"Fehlende Tokens: {missing_labels}")
+        return
+    remove_inventory_tokens(player, recipe["requirements"])
+    player.credits -= recipe["cost"]
+    for product in recipe["products"]:
+        player.inventory_tokens.append(product)
+    product_labels = ", ".join(get_token_label(engine, tok) for tok in recipe["products"])
+    print(f">>> Herstellung erfolgreich: {product_labels}")
+
+
+@register_menu_action("SKL")
+def handle_skill_action(engine: I18nEngine, player: Player):
+    price_map = parse_market_price_token(engine)
+    multiplier, extra = get_price_modifiers(engine, player)
+    skill_ids = list(SKILL_TREE.keys())
+    print("\n--- Skills ---")
+    for idx, skill_id in enumerate(skill_ids, start=1):
+        label = get_token_label(engine, skill_id)
+        desc = translate_with_fallback(engine, SKILL_TREE[skill_id]["desc_token"])
+        status = "gelernt" if skill_id in player.skill_tokens else "verfügbar"
+        if skill_id == player.active_skill_token:
+            status = "aktiv"
+        cost = price_map["skills"].get(skill_id, SKILL_TREE[skill_id]["cost"])
+        final_cost = max(1, int(round(cost * multiplier + extra)))
+        print(f"({idx}) {label} [{status}] – {desc} (Kosten: {final_cost} Cr)")
+    sel = input("Skill wählen zum Lernen/Aktualisieren (Enter zum Zurück) > ").strip()
+    if not sel.isdigit():
+        return
+    idx = int(sel) - 1
+    if not (0 <= idx < len(skill_ids)):
+        return
+    skill_id = skill_ids[idx]
+    skill_config = SKILL_TREE[skill_id]
+    if skill_id in player.skill_tokens:
+        if skill_config.get("type") == "active":
+            player.active_skill_token = skill_id
+            print(f">>> Aktiver Skill gesetzt: {get_token_label(engine, skill_id)}")
+        else:
+            print("Skill bereits erlernt.")
+        return
+    prereq = skill_config.get("prereq")
+    if prereq and prereq not in player.skill_tokens:
+        print("Voraussetzung fehlt.")
+        return
+    cost = price_map["skills"].get(skill_id, skill_config["cost"])
+    final_cost = max(1, int(round(cost * multiplier + extra)))
+    if player.credits < final_cost:
+        print(engine.translate("000C26", [final_cost]))
+        return
+    player.credits -= final_cost
+    acquire_skill(engine, player, skill_id)
 def execute_menu_key(engine: I18nEngine, player: Player, key: str):
     handler = MENU_ACTIONS.get(key.upper())
     if not handler:
@@ -986,6 +1205,10 @@ LEGACY_MENU_MAP = {
     "5": "HIGH",
     "6": "SAVE",
     "7": "EVENT",
+    "9": "INV",
+    "10": "MARK",
+    "11": "CRAFT",
+    "12": "SKL",
 }
 
 
@@ -1024,7 +1247,7 @@ def handle_shop_action(engine: I18nEngine, player: Player):
         print(engine.translate("000C22"))
     elif sc == "2" and player.credits >= 500:
         player.credits -= 500
-        player.weapon.atk_mod += 5
+        player.atk += 5
         print(engine.translate("000C22"))
     elif sc == "3":
         next_trait = next((t for t in TRAIT_CONFIG if not player.has_trait(t["id"])), None)
@@ -1083,19 +1306,31 @@ def handle_status_action(engine: I18nEngine, player: Player):
         print(line)
     for line in faction_status_lines(engine, player):
         print(line)
+    print("\n--- Token-Status ---")
+    active_weapon = player.equipped_items.get("weapon")
+    print(f"Ausrüstung: {get_token_label(engine, active_weapon) if active_weapon else 'Keine'}")
+    inv_counts = inventory_counts(player)
+    if inv_counts:
+        print("Inventar:")
+        for token, amount in inv_counts.items():
+            print(f"- {get_token_label(engine, token)} x{amount}")
+    else:
+        print("- Leer")
+    if player.skill_tokens:
+        skill_lines = []
+        for skill_id in player.skill_tokens:
+            label = get_token_label(engine, skill_id)
+            suffix = " (aktiv)" if skill_id == player.active_skill_token else ""
+            skill_lines.append(f"{label}{suffix}")
+        print("Skills: " + ", ".join(skill_lines))
+    else:
+        print("Skills: Keine")
     sub = input(engine.translate("000202") + "\n> ")
     if sub == "1" and player.kits > 0:
         player.hp = min(player.max_hp, player.hp + 40)
         player.kits -= 1
     elif sub == "2":
-        for i, w in enumerate(player.available_weapons):
-            print(f"({i}) {engine.translate(w.desc_t)}")
-        sel = input("> ")
-        player.weapon = (
-            player.available_weapons[int(sel)]
-            if sel.isdigit() and int(sel) < len(player.available_weapons)
-            else player.weapon
-        )
+        print("Nutze das Token-Inventar (Option 9), um Items auszurüsten.")
 
 
 @register_menu_action("HIGH")
@@ -1190,7 +1425,7 @@ def play_story_sequence(engine: I18nEngine, player: Player):
         if not node:
             return
         text_args = [player.name, int(player.lvl), int(player.kills)]
-        text = engine.translate(node["text_token"], text_args)
+        text = translate_with_fallback(engine, node["text_token"], text_args)
         print("\n" + ("-" * 40))
         print(f"STORY [{node['node_key']}]: {text}")
         apply_story_effects(player, node)
@@ -1201,7 +1436,7 @@ def play_story_sequence(engine: I18nEngine, player: Player):
             return
         labels = []
         for idx, choice in enumerate(node["choices"], start=1):
-            label = engine.translate(choice["label_token"])
+            label = translate_with_fallback(engine, choice["label_token"])
             print(f"({idx}) {label}")
             labels.append((choice, label))
         sel = input("> ").strip()
@@ -1268,6 +1503,189 @@ def execute_dynamic_script(player: Player, script: str, label: str = "CALR"):
     return run_script(player, script, label)
 
 
+def get_token_label(engine: I18nEngine, token: str) -> str:
+    raw = resolve_catalog_token(engine, token)
+    if not raw:
+        return token
+    label = raw.split("|", 1)[0]
+    return label.strip() or token
+
+
+def inventory_counts(player: Player) -> Counter:
+    return Counter(player.inventory_tokens)
+
+
+def inventory_has_tokens(player: Player, tokens: list[str]) -> bool:
+    needed = Counter(tokens)
+    available = inventory_counts(player)
+    return all(available[token] >= amount for token, amount in needed.items())
+
+
+def remove_inventory_tokens(player: Player, tokens: list[str]):
+    needed = Counter(tokens)
+    for token, count in needed.items():
+        for _ in range(count):
+            if token in player.inventory_tokens:
+                player.inventory_tokens.remove(token)
+
+
+def parse_script_effects(script: str) -> dict:
+    _, clauses = parse_script(script)
+    effects = {}
+    for clause in clauses:
+        if ":" not in clause:
+            continue
+        key, value = clause.split(":", 1)
+        key = key.strip().lower()
+        if not key:
+            continue
+        try:
+            numeric = float(value)
+        except ValueError:
+            continue
+        if key == "stab_sub":
+            effects["stability_penalty"] = effects.get("stability_penalty", 0.0) + numeric
+            continue
+        if key.endswith("_mul"):
+            effects[key] = effects.get(key, 1.0) * numeric
+        else:
+            effects[key] = effects.get(key, 0.0) + numeric
+    return effects
+
+
+def aggregate_equipped_item_effects(engine: I18nEngine, player: Player) -> dict:
+    merged = {}
+    for slot, token in player.equipped_items.items():
+        if not token:
+            continue
+        script = resolve_catalog_token(engine, token)
+        if "⟦" in script:
+            continue
+        token_effects = parse_script_effects(script)
+        for key, value in token_effects.items():
+            if key.endswith("_mul"):
+                merged[key] = merged.get(key, 1.0) * value
+            else:
+                merged[key] = merged.get(key, 0.0) + value
+    return merged
+
+
+def skill_resource_multiplier(engine: I18nEngine, player: Player) -> float:
+    multiplier = 1.0
+    for skill_id in player.skill_tokens:
+        script = resolve_catalog_token(engine, skill_id)
+        if "⟦" in script:
+            continue
+        effects = parse_script_effects(script)
+        multiplier *= effects.get("resource_mult", 1.0)
+    return multiplier
+
+
+def gather_resources(engine: I18nEngine, player: Player) -> list[str]:
+    shard_token = player.current_shard_token or DEFAULT_SHARD_TOKEN
+    nodes = SECTOR_RESOURCE_NODES.get(shard_token, DEFAULT_RESOURCE_POOL)
+    if not nodes:
+        nodes = DEFAULT_RESOURCE_POOL
+    base_count = random.randint(1, 2)
+    total = max(1, int(round(base_count * skill_resource_multiplier(engine, player))))
+    gained = []
+    for _ in range(total):
+        token = random.choice(nodes)
+        player.inventory_tokens.append(token)
+        gained.append(token)
+    if gained:
+        labels = ", ".join(get_token_label(engine, tok) for tok in gained)
+        print(f">>> Ressourcen gefiltert: {labels}")
+    return gained
+
+
+def parse_recipe_token(engine: I18nEngine, token_id: str) -> dict:
+    script = resolve_catalog_token(engine, token_id)
+    if "⟦" in script:
+        return {}
+    label, clauses = parse_script(script)
+    recipe = {"label": label, "requirements": [], "products": [], "cost": 0}
+    for clause in clauses:
+        if ":" not in clause:
+            continue
+        key, value = clause.split(":", 1)
+        key = key.strip().upper()
+        value = value.strip()
+        if key == "REQ" and value:
+            recipe["requirements"] = [tok.strip() for tok in value.split("+") if tok.strip()]
+        elif key == "PROD" and value:
+            recipe["products"] = [tok.strip() for tok in value.split("+") if tok.strip()]
+        elif key == "COST":
+            try:
+                recipe["cost"] = int(float(value))
+            except ValueError:
+                recipe["cost"] = 0
+    return recipe
+
+
+def parse_market_price_token(engine: I18nEngine) -> dict:
+    script = resolve_catalog_token(engine, MARKET_PRICE_TOKEN)
+    price_map = {"items": {}, "resources": {}, "skills": {}}
+    if "⟦" in script or "|" not in script:
+        return price_map
+    _, clauses = parse_script(script)
+    for clause in clauses:
+        if ":" not in clause:
+            continue
+        key, data = clause.split(":", 1)
+        key = key.strip().upper()
+        for entry in [e.strip() for e in data.split(",") if e.strip()]:
+            if "=" not in entry:
+                continue
+            tid, value = entry.split("=", 1)
+            try:
+                price = int(float(value))
+            except ValueError:
+                continue
+            tid = tid.strip()
+            if key == "ITEM":
+                price_map["items"][tid] = price
+            elif key == "RESOURCE":
+                price_map["resources"][tid] = price
+            elif key == "SKILL":
+                price_map["skills"][tid] = price
+    return price_map
+
+
+def get_price_modifiers(engine: I18nEngine, player: Player) -> tuple[float, float]:
+    multiplier, extra = 1.0, 0.0
+    sources = [get_active_world_event_token()] + player.skill_tokens
+    for token in filter(None, sources):
+        script = resolve_catalog_token(engine, token)
+        if not script or "PRICE_" not in script:
+            continue
+        _, clauses = parse_script(script)
+        for clause in clauses:
+            if ":" not in clause:
+                continue
+            key, value = clause.split(":", 1)
+            key = key.strip().upper()
+            try:
+                numeric = float(value)
+            except ValueError:
+                continue
+            if key == "PRICE_MUL":
+                multiplier *= numeric
+            elif key == "PRICE_ADD":
+                extra += numeric
+    return multiplier, extra
+
+
+def acquire_skill(engine: I18nEngine, player: Player, skill_id: str) -> bool:
+    if skill_id in player.skill_tokens:
+        return False
+    player.skill_tokens.append(skill_id)
+    append_logbook_entry(skill_id, [skill_id])
+    if SKILL_TREE.get(skill_id, {}).get("type") == "active" and not player.active_skill_token:
+        player.active_skill_token = skill_id
+    print(f">>> Skill freigeschaltet: {get_token_label(engine, skill_id)}")
+    return True
+
 LORE_TOKENS = ["000B10", "000B11", "000B12", "000B13", "000B14", "000B15"]
 MYCEL_ENEMY_TOKENS = [
     "3aa732c6",
@@ -1306,6 +1724,8 @@ def run_battle(player, engine, is_boss=False):
         if battle_msg:
             print("\n" + translate_with_fallback(engine, battle_msg))
 
+    item_effects = aggregate_equipped_item_effects(engine, player)
+
     calr_script = compose_calr_script(engine, player)
     calr_effects = None
     if calr_script:
@@ -1320,6 +1740,7 @@ def run_battle(player, engine, is_boss=False):
     print("\n" + lore)
 
     total_module_penalty = player.trait_stability_penalty()
+    total_module_penalty += item_effects.get("stability_penalty", 0)
     for trait in TRAIT_CONFIG:
         if player.has_trait(trait["id"]) and trait.get("module_token"):
             effects = execute_token_script(player, engine, trait["module_token"])
@@ -1328,6 +1749,13 @@ def run_battle(player, engine, is_boss=False):
 
     stability = max(15, stability - total_module_penalty - story_penalty)
     print("\n" + engine.translate("000C10", [int(stability)]))
+
+    hp_add = item_effects.get("hp_add", 0)
+    if hp_add:
+        player.hp = min(player.max_hp, player.hp + hp_add)
+    hp_sub = item_effects.get("hp_sub", 0)
+    if hp_sub:
+        player.hp = max(0, player.hp - hp_sub)
 
     if stability < 75:
         physics_bonus = random.randint(5, 20)
@@ -1341,9 +1769,13 @@ def run_battle(player, engine, is_boss=False):
     original_hp = e_hp
     
     story_effects = player.story_effects or {}
-    e_hp, e_atk = apply_enemy_effects(e_hp, e_atk, [calr_effects, scaling_effects, story_effects])
+    e_hp, e_atk = apply_enemy_effects(e_hp, e_atk, [calr_effects, scaling_effects, story_effects, item_effects])
     print(engine.translate("000300", [e_name, int(e_hp), player.shard_name]))
     print(engine.translate("000A03" if is_boss else "000A01"))
+
+    defense_bonus = item_effects.get("def_add", 0)
+    skill_ready = bool(player.active_skill_token and player.active_skill_token in player.skill_tokens)
+    trait_multiplier = player.trait_damage_multiplier()
 
     while e_hp > 0 and player.hp > 0:
         if is_boss and not boss_phase_triggered and e_hp <= original_hp / 2:
@@ -1353,23 +1785,48 @@ def run_battle(player, engine, is_boss=False):
                 stability -= boss_effects.get("stability_penalty")
                 print("> Bossphase aktiviert: Stabilität reduziert.")
         print(f"\n{player.name}: {int(player.hp)} HP | {e_name}: {int(e_hp)} HP")
-        choice = input(engine.translate("000201") + (" [K=ADMIN]" if player.admin_mode else "") + "\n> ").strip()
-        if player.admin_mode and choice.lower() == 'k': e_hp = 0; break
-        
+        prompt = engine.translate("000201")
+        if skill_ready:
+            prompt += " (S=Skill)"
+        if player.admin_mode:
+            prompt += " [K=ADMIN]"
+        choice = input(prompt + "\n> ").strip()
+        if skill_ready and choice.upper() == "S":
+            execute_token_script(player, engine, player.active_skill_token)
+            skill_ready = False
+            continue
+        if player.admin_mode and choice.lower() == 'k':
+            e_hp = 0
+            break
+
         dmg = 0
-        current_atk = int((player.atk + player.weapon.atk_mod + physics_bonus) * player.trait_damage_multiplier())
-        if choice == "1": dmg = current_atk + random.randint(-2, 2)
-        elif choice == "2" and random.random() > 0.4: dmg = int(current_atk * 1.8); print(">>> VOLLTREFFER!")
-        elif choice == "3": player.hp = min(player.max_hp, player.hp + 25); print("Reparatur...")
-        
+        atk_add = item_effects.get("atk_add", 0)
+        atk_mul = item_effects.get("atk_mul", 1.0)
+        current_atk = int((player.atk + atk_add + physics_bonus) * atk_mul * trait_multiplier)
+        if choice == "1":
+            dmg = current_atk + random.randint(-2, 2)
+        elif choice == "2" and random.random() > 0.4:
+            dmg = int(current_atk * 1.8)
+            print(">>> VOLLTREFFER!")
+        elif choice == "3":
+            player.hp = min(player.max_hp, player.hp + 25)
+            print("Reparatur...")
+
         if dmg > 0:
-            if random.random() < (player.crit_chance + player.weapon.crit_mod):
-                dmg *= 2; print(engine.translate("000303", [player.name, int(dmg)]))
-            e_hp -= dmg; print(engine.translate("000301", [player.name, e_name, int(dmg)]))
+            crit_add = item_effects.get("crit_add", 0)
+            crit_mul = item_effects.get("crit_mul", 1.0)
+            current_crit = (player.crit_chance + crit_add) * crit_mul
+            if random.random() < current_crit:
+                dmg *= 2
+                print(engine.translate("000303", [player.name, int(dmg)]))
+            e_hp -= dmg
+            print(engine.translate("000301", [player.name, e_name, int(dmg)]))
             if e_hp <= 0:
                 break
         if e_hp > 0:
-            player.hp -= e_atk; print(engine.translate("000301", [e_name, player.name, int(e_atk)]))
+            enemy_hit = max(1, int(e_atk - int(defense_bonus)))
+            player.hp -= enemy_hit
+            print(engine.translate("000301", [e_name, player.name, int(enemy_hit)]))
 
     if player.hp <= 0:
         return False
@@ -1405,6 +1862,7 @@ def run_battle(player, engine, is_boss=False):
             player.hp = player.max_hp
             player.xp = 0
             print(engine.translate("000103", [player.name, int(player.lvl), int(player.atk)]))
+        gather_resources(engine, player)
         trigger_story_progress(engine, player)
         return True
 

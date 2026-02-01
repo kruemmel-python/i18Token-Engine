@@ -43,7 +43,7 @@
 # --- MENÜS (0002..) ---
 000200: (1) Sektor scannen (2) Navigation (3) NPC & Shop (4) Status & Quests (5) Highscores (6) Speichern & Beenden (7) Welt-Events
 000M100: --- MATRIX-MENÜ ---
-000M101: 1:SCAN:Sektor scannen|2:NAV:Navigation|3:SHOP:NPC & Shop|4:STATUS:Status & Quests|5:HIGH:Highscores|6:SAVE:Speichern & Beenden|7:EVENT:Welt-Events|8:STORY:Geschichte
+000M101: 1:SCAN:Sektor scannen|2:NAV:Navigation|3:SHOP:NPC & Shop|4:STATUS:Status & Quests|5:HIGH:Highscores|6:SAVE:Speichern & Beenden|7:EVENT:Welt-Events|8:STORY:Geschichte|9:INV:Token-Inventar|10:MARK:Token-Markt|11:CRAFT:Handwerk|12:SKL:Skills
 000201: AKTION: (1) Schlag (2) Mycel-Stoß (Schwer) (3) Reparatur (Heilen)
 000202: (1) Heil-Kit nutzen (2) Waffe wechseln (3) Zurück
 # --- PHYSIK & ANOMALIEN (000C10..) ---
@@ -74,6 +74,32 @@
 000C30: Core-Stabilisator: +15 HP, +3 ATK (Core-Kollektiv benötigt).
 000C31: Aurora-Kondensator: +10% Krit-Chance, +1 Kit (Aurora-Syndikat benötigt).
 000C32: %0 gekauft für %1 Credits.
+# --- TOKEN-MARKT ---
+000B200: Händler-Modul|ITEM:000I100=180,000I101=320,000I102=260,000I200=420,000I201=650|RESOURCE:000N50=45,000N51=35,000N52=60|SKILL:000K101=180,000K102=320,000K200=420
+000B201: Token-Markt bereit. Credits fließen durch jeden aktiven Zustand.
+000B202: Keine Ressourcen oder Token verfügbar, um Handel aufzubauen.
+# --- ITEMS (000I..) ---
+000I100: Plasmasäbel|ATK_ADD:10|CRIT_ADD:0.05
+000I101: Mycel-Schild|DEF_ADD:5|STAB_SUB:3
+000I102: Aurora-Rucksack|HP_ADD:30|CRIT_MUL:1.1
+000I200: Eisen-Legierung|ATK_ADD:8|DEF_ADD:3
+000I201: Synth-Aegis|ATK_ADD:5|CRIT_MUL:1.2|STAB_SUB:4
+# --- RESOURCE NODES (000N..) ---
+000N50: Neuronium-Splitter – glühender Kernsplitter aus Alpha-Prime.
+000N51: Ferrocarbide-Schuppe – gefräste Datenkristalle mit hoher Dichte.
+000N52: Aurora-Gel – pulsierende Flüssigkeit, die Lichtwellen stabilisiert.
+000N53: Sandstaub-Verstärker – die Wüste konzentriert Partikel auf deine Tools.
+000N54: Magnetregensplitter – träger Magnetismus, der Resonanz aufnimmt.
+# --- REZEPTE (000C1XX) ---
+000C100: Eisen-Legierung|REQ:000N50+000N51|PROD:000I200|COST:120
+000C101: Synth-Aegis-Bootstrapping|REQ:000I200+000N52|PROD:000I201|COST:220
+# --- SKILLS (000K..) ---
+000K101: Bergbau-Grundlagen|RESOURCE_MULT:1.15
+000K102: Bergbau Stufe 2|RESOURCE_MULT:1.35
+000K200: Mycel-Schild|DEF_ADD:6|STAB_SUB:8
+000K10: Bergbau-Grundlagen – Du spürst Vibrationen und zerlegst Nodes schneller.
+000K11: Bergbau Stufe 2 – Präzise Steuerung deiner Tools erhöht Ausbeute bei knappen Erzen.
+000K12: Mycel-Schild – Aktiviere eine Barriere, die Frontschaden abschwächt und Stabilität senkt.
 # --- GRAFIKEN & SEKTOREN (000A..) ---
 000A01:  .---. \n /     \\ \n |  O  | \n \\     / \n  '---'  (DROHNE)
 000A02:  /\\/\\/\\ \n  | DATA | \n  \\/\\/\\/  (STATION)

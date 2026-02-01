@@ -3,3 +3,4 @@
 000C10: [STABILITÄT] Aurora-Impuls: Sektor-Integrität bei %0%. Lichtwellen beruhigen die Matrix.
 000C12: [PHYSICS] Aurora-Pulse fokussieren deinen Schlag (+%0 Schaden).
 000W98: Aurora-Lichter stabilisieren deine Gedanken und schaffen Ordnung.
+000E98: Aurora-Pulse – Harmonisierung senkt Händlerpreise|PRICE_MUL:0.85|STAB_SUB:0

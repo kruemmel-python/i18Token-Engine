@@ -178,43 +178,6 @@ a562ca0d(Lumen Vanguard): Holografischer Schildträger, der defensive Laser-Clus
 21dea3ef(Aurora Leviathan): Boss aus auroraler Energie, verlangsamt dich, während er Multi-Strahlen entlädt.
 0dff43ae(Nexxus Anarch): Boss-Entropie-Kern, der zufällige Buffs von dir stiehlt und mit Chaos-Salven reagiert.
 
-@meta locale:de
-# --- LOCALS ---
-000A01:  .===. \\n /█████\\ \\n | [A] | \\n \\█████/ \\n  '---'  (INDUSTRIAL-DROHNE)
-000B10: Ein pulsierender Stahltriebwerk-Kern...
-000B11: ...mit knisternden Relais...
-000B12: ...und einer Spur aus magnetisiertem Staub.
-000B13: ...der blutrot leuchtende Neutronenfluss.
-000B14: ...eine Resonanz aus getakteten Schatten.
-000B15: ...versiegelte Datenkanäle und Hydraulik.
-000C10: [STABILITÄT] Alpha-Prime-Netz bei %0%. Maschinenflüstern erreicht kritische Frequenzen.
-000C12: [PHYSICS] Überladene Aktuatoren beschleunigen deinen Schlag (+%0 Schaden).
-
-@meta locale:de
-# --- WORLD COLLAPSE ---
-000C10: [STABILITÄT] Weltkollaps: Sektor-Integrität bei %0%. Globale Risse reißen die Matrix auf.
-000C12: [PHYSICS] Kollaps-Ströme beschleunigen deinen Schlag (+%0 Schaden).
-000B00: [WARNUNG] Der SubQG Core reagiert auf den Weltkollaps.
-000W97: Weltkollaps: Die Matrix ächzt unter einer neuen Gravitation.
-000E99: Weltkollaps – Globale Risse treiben Preise nach oben|PRICE_MUL:1.45|STAB_SUB:10
-
-@meta locale:de
-000H30: Die Aurora-Pulse schlagen in bunten Farben. 'Der Nexxus wird zum Leuchtfeuer.'
-000H31: Die Core-Taskforce antwortet: 'Schicke den Rift Marauder, sobald du bereit bist.'
-000H32: Die Schattenkern-Signale verdichten sich: 'Die Nexxus-Entropie wartet auf einen magnetischen Bruch.'
-000H33: Kartografin: 'Die Gateways führen tiefer.'
-000H34: Die Matrix wartet nun auf deinen nächsten Schritt. Die Legende ist in den Tokens kodiert.
-000H35: (1) Licht-Beschwörung vorbereiten
-000H36: (2) Nexus-Signale abschirmen
-000H37: (1) Rift Marauder rufen
-000H38: (2) Selbst losziehen
-000H39: (1) Magnetfeld schnell entladen
-000H40: (2) Entropie beobachten
-000H41: (1) Verbündete warnen
-000H42: (2) Gateways erkunden
-000H43: (1) Den finalen Schritt machen
-000H50: NODE:aurora|TEXT:000H30|CHOICE1:000H35:finale|CHOICE2:000H36:finale|STAB_SUB:15|ENEMY_ATK_MUL:1.2
-000H51: NODE:taskforce|TEXT:000H31|CHOICE1:000H37:finale|CHOICE2:000H38:finale|ENEMY_HP_ADD:50
-000H52: NODE:shadow|TEXT:000H32|CHOICE1:000H39:finale|CHOICE2:000H40:finale|ENEMY_HP_MUL:1.25
-000H53: NODE:map|TEXT:000H33|CHOICE1:000H41:finale|CHOICE2:000H42:finale|STAB_SUB:5
-000H54: NODE:finale|TEXT:000H34
+000E20: [LOG] Fragment: Der Core schwankt im Takt der Meta-Ströme.
+000E21: [LOG] Fragment: Die Hardware flüstert von vergessenen Payloads.
+000E22: [LOG] Fragment: Eine Geheimklasse beschreibt die nächste Mutation.
