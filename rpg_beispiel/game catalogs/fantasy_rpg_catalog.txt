@@ -1,0 +1,212 @@
+﻿@meta locale:de
+@meta plural_rule:0
+# --- SYSTEM (0001..) ---
+000100: Willkommen im Glutheim-Konsortium. Runen-Schnittstelle stabilisiert.
+000103: *** Ritus! %0 erreicht Rang %1 (ATK: %2) ***
+000105: [SYSTEM] Chroniken-Sphäre erfolgreich synchronisiert.
+000106: [CHEAT] Arkane Glyph aktiviert! Meistermodus bereit.
+000107: [SYSTEM] Sigillen-Chronik wurde gesichert.
+000108: [SYSTEM] Spielstand geladen. Integrität wiederhergestellt.
+# --- WELTKARTE & SHARDING (000W..) ---
+000W00: --- Gilden-Interface ---
+000W01: Aktueller Standort: %0 | Regionstyp: %1
+000W02: Der Pfad ruft. Wähle eine Region, um dich hinein zu weben.
+000W03: Du verweilst bereits in %0.
+000W04: %0 geladen. Typ: %1
+000W05: Region-Datei %0 konnte nicht gefunden werden.
+000W06: Verfügbare Regionen:
+000W10: sector_alpha.txt|NAME:Glutheim-Tempel|TYPE:Verdant
+000W11: sector_wasteland.txt|NAME:Kristall-Wüste|TYPE:Arid
+000W90: --- WELT-EVENT-SYSTEM ---
+000W91: Aktiver Zustand: %0
+000W92: Verfügbare globale Ereignisse:
+000W93: (0) Event beenden
+000W94: Welt-Event %0 aktiviert.
+000W95: Welt-Event beendet.
+000W96: Welt-Event %0 aktiviert: Aurora-Countdown beruhigt die Ätherströme.
+000W97: Schattenfall: Die Welt ächzt unter neuen Gravitationen.
+000W98: Aurora-Pulse: Strahlen beruhigen die Sektoren.
+000W99: Kein Welt-Event aktiv.
+000W9A: Dieses Event ist bereits aktiv.
+000G10: Verdant-Konsortium
+000G11: Wächter der Knoten und Hüter der Stabilität im Glutheim.
+000G12: Aurora-Gesellschaft
+000G13: Lichtweber, die durch Pulsschwingungen Ordnung erzeugen.
+000G20: %0 Ansehen um %1 Punkte verändert.
+000G21: %0: %1 Punkte
+000W20: Erzmagier: "Die Kohorte zieht über die Feuerlande."
+000W21: Erzmagier: "Kristallpilger wandern durch die Flure; folge ihrem Licht."
+000W22: Erzmagier: "Geisterkaste beschwört Glyphen; halte Ausschau nach Gaben."
+000W23: Erzmagier: "Ritualgrenzen markieren verbotene Runen; sei bereit."
+000W24: Erzmagier: "Ätherflüsse leuchten; deine Spur bringt Belohnungen."
+000W25: Erzmagier: "Neue Schlüsse öffnen Traits für den Wandel."
+000W50: Glutheim-Tempel (Nord)
+000W51: Kristall-Wüste (Südwind)
+000W52: Zone Sylvan – Nebel und leuchtende Wipfel
+000W53: Zone Bastion – Verlorene Hallen und Emissionen
+000W54: Zone Maelstrom – Sturmkammer mit arkanem Wetter
+000W5A: Glutheim-Tempel
+000W5B: Kristall-Wüste
+000W5C: Zone Sylvan
+000W5D: Zone Bastion
+000W5E: Zone Maelstrom
+000WA0: Verdant
+000WA1: Arid
+000WA2: Ember
+000WA3: Sanctum
+000WA4: Flux
+000WA5: gelernt
+000WA6: verfügbar
+000WA7: aktiv
+000WA8: Region
+000WA9: Welt-Event
+000WAA: Wissen
+# --- MENÜS (0002..) ---
+000200: (1) Sektor scannen (2) Navigation (3) NPC & Shop (4) Status & Quests (5) Highscores (6) Speichern & Beenden (7) Welt-Events
+000M100: --- AETHER-MENÜ ---
+000M101: 1:SCAN:Orakelblick|2:NAV:Portal zu Regionen|3:SHOP:Gildenmarkt|4:STATUS:Chronik & Quests|5:HIGH:Ranglisten der Eldoran|6:SAVE:Hüter-Archiv|7:EVENT:Welten-Runen|8:STORY:Chroniken
+000201: AKTION: (1) Schlag (2) Mycel-Stoß (Schwer) (3) Reparatur (Heilen)
+000202: (1) Heil-Kit nutzen (2) Waffe wechseln (3) Zurück
+# --- PHYSIK & ANOMALIEN (000C10..) ---
+000C10: [STABILITÄT] Sektor-Integrität bei %0%. Physik-Konstanten normal.
+000C11: [ANOMALIE] GPU-Cube-Rauschen detektiert! Schaden fluktuiert um %0%.
+000C12: [PHYSICS] Gravitations-Glitch! Dein Schlag wird beschleunigt (+%0 Schaden).
+# --- QUESTS (000D..) ---
+000D01: --- AKTIVE QUESTS ---
+000D02: Kopfgeld: Vernichte %0 / %1 Virus-Drohnen.
+000D03: [QUEST] Ziel erreicht! Bonus-Credits übertragen: +%0 Cr.
+# --- SHOP & LORE ---
+# --- SHOP & LORE ---
+000B10: Ein verwunschener Tempelpfad...
+000B11: ...ein uralter Steinkreis...
+000B12: ...ein vergessenes Sternenlicht.
+000B13: ...eine flackernde Zauberkammer...
+000B14: ...neblige Sternenpfade...
+000B15: ...verlornene Runenlinien.
+000C20: --- ELDORAN-MARKTPLATZ (Gold: %0) ---
+000C21: (1) Heiltrank [150 G] (2) Waffenschmied +5 ATK [500 G] (3) Trait-Runenstein [250 G] (4) Verborgene Schriftrolle [400 G] (5) Zurück
+000C22: Transaktion abgeschlossen. Magie stabilisiert.
+000C23: Nicht genug Goldmünzen.
+000C24: Trait %0 übernommen – %1
+000C25: Schriftrolle entziffert! Neue Chroniken: %0
+000C26: Benötigt %0 Goldmünzen.
+000C27: Alle Trait-Steine sind bereits installiert.
+000C28: Keine neuen Schriftrollen im Lager.
+000C30: Stabilisatorsiegel: +15 HP, +3 ATK (Verdant-Konsortium benötigt).
+000C31: Leuchtkondensator: +10% Krit-Chance, +1 Toolkit (Aurora-Gesellschaft benötigt).
+000C32: %0 beschafft für %1 Goldmünzen.
+000B200: Händler-Tabernakel|ITEM:000I100=180,000I101=320,000I102=260,000I200=420,000I201=650|RESOURCE:000N50=45,000N51=35,000N52=60|SKILL:000K101=180,000K102=320,000K200=420
+000B201: Magischer Handel bereit. Schätze fließen durch jeden aktiven Zustand.
+000B202: Keine Ressourcen oder Artefakte zum Handel verfügbar.
+000I100: Runenklinge|ATK_ADD:10|CRIT_ADD:0.05
+000I101: Aether-Schild|DEF_ADD:5|STAB_SUB:3
+000I102: Sternenmantel|HP_ADD:30|CRIT_MUL:1.1
+000I200: Drachenschmiede-Eisen|ATK_ADD:8|DEF_ADD:3
+000I201: Sylvan-Aegis|ATK_ADD:5|CRIT_MUL:1.2|STAB_SUB:4
+000N50: Glutstein-Splitter – brennt mit eigener Resonanz.
+000N51: Mondkristall-Schuppe – reflektiert Scheinwerfer der Nebel.
+000N52: Aurora-Träne – flüssige Lichtessenz mit heilender Ruh.
+000N53: Sandsturm-Feuerpulver – bindet Staub zu glühenden Projektilen.
+000N54: Sturmspule – speichert Wind und Funken.
+000C100: Drachenschmiede-Essenz|REQ:000N50+000N51|PROD:000I200|COST:120
+000C101: Sylvan-Aegis-Bootstrapping|REQ:000I200+000N52|PROD:000I201|COST:220
+000K101: Runenwissen|RESOURCE_MULT:1.15
+000K102: Runenmeisterschaft|RESOURCE_MULT:1.35
+000K200: Sternenschild|DEF_ADD:6|STAB_SUB:8
+000K10: Runenwissen – Du spürst Pulsationen und entdeckst Glyphen schneller.
+000K11: Runenmeisterschaft – Präzise Kontrolle erhöht Ausbeute bei knappen Essenzen.
+000K12: Sternenschild – Aktiviere eine Barriere, die Schaden abschwächt und Stabilität senkt.
+# --- GRAFIKEN & SEKTOREN (000A..) ---
+000A01:   .===. \n  /     \\ \n |  O  | \n  \\     / \n   '==='  (AETHERWÄCHTER)
+000A02:  /\\/\\/\\ \n  | DATA | \n  \\/\\/\\/  (SÄULENWURM)
+000A03:      . \n     / \\ \n    | * | \n     \\ / \n      '   (SCHATTENKERN)
+000A04:   [P] \n   /||\\ \n   /  \\  (ERZMAGIER)
+000A05:  .-------. \n | [ $ ] | \n '-------' (HANDLUNGEN)
+# --- ACHIEVEMENTS (000F..) ---
+000F01: [!|!] AWAKENING: Erstes Ritual abgeschlossen.
+000F02: [*|*] RUNENMEISTER: Rang %0 erreicht, Äther stabilisiert.
+000F03: [#|#] LUMINA-ARCHON: Du hast den Schattenkern gebannt.
+000E10: Flammensturm-Essenz|ATK_ADD:15|HP_SUB:5
+000E11: Schattenfokus|CRIT_MUL:3.0|STAB_SUB:30
+000E12: Trait-Infusion: Stabilisator abgeschaltet. Stabilität -20%, Schaden +50%.
+000E13: Trait-Infusion: Resonanzdynamik stabilisiert. Schaden +20%, Stabilität unverändert.
+000B50: Phase-Resonanz: CRIT_MUL:2.0|STAB_SUB:40
+000E70: Glutwächter
+000E71: Schattenkern
+000E98: Aurora-Puls – Der Äther beruhigt die Lichter.
+000E99: Schattenfall – Die Welt ächzt unter neuen Gravitationen.
+# --- KAMPF-MODULE (LOGIK) ---
+# --- BESCHREIBUNGEN ---
+000D91: Overclock-Modul: +15 ATK, kostet 5 HP pro Einsatz.
+000D92: Instabile GPU: Dreifacher Krit-Schaden, senkt Sektor-Stabilität massiv.
+# --- CALR (Context-Aware Logic Retrieval) ---
+000R10: ATK_ADD:4
+000R11: CRIT_ADD:0.1
+000R12: ATK_MUL:1.05
+000R13: DEF_ADD:4
+000R20: HP_ADD:10
+000R21: CRIT_ADD:0.05
+000R22: ATK_ADD:3
+000R50: CALR-Core Surge
+000R51: CALR-Aurora Pulse
+# --- ENEMY SCALING (000S..) ---
+000S60: Skalierender Kern – Adaptive Tuning|ENEMY_HP_MUL:1.15|ENEMY_ATK_MUL:1.05
+000S61: Resonanzschleife – Harte Gegenwehr|ENEMY_HP_MUL:1.3|ENEMY_ATK_MUL:1.15|ENEMY_HP_ADD:20
+000S62: Reaktiver Core – Level-Shift|ENEMY_HP_MUL:1.6|ENEMY_ATK_MUL:1.3|ENEMY_HP_ADD:45|ENEMY_ATK_ADD:6
+# --- WAFFEN (000E..) ---
+000E01: --+--- (Plasma-Klinge)
+000E02: Plasma-Klinge (+10 ATK)
+000E03: ==(O)== (Mycel-Stab)
+000E04: Mycel-Stab (+20% Krit-Chance)
+# --- KAMPF & BOSS ---
+000300: %0 (HP: %1) in Sektor %2 lokalisiert!
+000301: %0 -> %1: %2 Schaden übertragen.
+000302: %0 wurde gelöscht. +%1 XP | +%2 Credits.
+000303: KRITIK! %0 erzielt einen System-Durchschlag für %1 Schaden!
+000304: Beute gefunden: %0
+000605: Reparatur-Kit
+000B00: [WARNUNG] Der Schattenkreis bricht die Schleier der Realität.
+000B02: ARCANUM: "Überfluss! Verderbnis strebt nach neuen Kernen!"
+000B03: *** LUMINA-REINIGUNG: Der Schattenkern wurde gebannt! ***
+000B99: Dein Held ist gefallen. Das Ritual endet.
+# --- NPC TEXTE ---
+000700: Erzmagier: "Deine Runen glänzen. Benötigst du Artefakte oder Aufwertungen?"
+000701: Erzmagier: "Du bist noch nicht bereit. Bezwinge %0 weitere Bestien."
+000702: Erzmagier: "Das Tor wartet. Stell dich dem Flux."
+# --- HIGHSCORE (000C..) ---
+000C00: --- BINÄRE RANGLISTE (V2) ---
+000C01: Platz %0: %1
+# --- ELDORAN-GEGNER ---
+3f6597fe(Aetherling Scout): Leichte Äther-Späherin, die mit Runenpfeilen Distanz hält.
+add3f56c(Echo Banshee): Ein Echo-Schrei wäscht deine Stabilität mit hallenden Wellen.
+1200235b(Phantom Weaver): Webt schimmernde Netze, die Treffer in Schaden umwandeln.
+ad8a3914(Lumina Harrier): Leuchtende Streitraben, die mit Blitzflügeln stürzen.
+26577ac5(Cinder Wyrm): Schwelender Wurm, der Lava-Spucke und Funkenregen aussendet.
+92a932b6(Spire Sentinel): Turmwächter, der Energiesäulen entlang deiner Spur formt.
+ef6d6c96(Veil Reaver): Schattenjägerin, zieht dich in Nebelstrudel, bevor sie zerschneidet.
+2518c0cb(Gale Wisp): Windgeister, die dich herumwirbeln und Stun-Felder legen.
+09360023(Runeblade Strider): Laufende Runenklinge belebt jeden Schritt mit Crit-Embeds.
+ec1aa615(Chrono Drake): Zeitdrache, der Blasen ausspuckt und dein Jagdtempo verlangsamt.
+# --- ELDORAN-BOSSE ---
+2663cecd(Prismatic Sovereign): Aether-Boss, dessen Prismenschilde alle Treffer reflektieren und neu mischen.
+0443ac9e(Geomancer Colossus): Boss-Architekt, der Terrain-Schlamm und Schockwellen schleudert.
+530d6e95(Flux Overlord): Ströme manipulierender Boss, der Buffs zitternd neu kanalisiert.
+27e23f6a(Eidolon Matriarch): Ahnen-Boss, der Kopien deiner Aktionen beschwört und blockiert.
+2b9440ad(Starforged Exarch): Sterngeschmiedeter Exarch, der Meteoritenstrahlen Richtung Stabilität schickt.
+# --- MYCEL-NEBENKÄMPFER ---
+3aa732c6(Cerulean Warden): Frostklinge-Wächter, dessen Lichtbarriere reflektiert.
+57ee01d4(Blitz-Phantom): Elektrischer Späher, der Puls-Explosionen hinterlässt.
+3ec17a46(Radial-Tempest): Rotierender Windwirbel, der deine Haltung prüft.
+1ba52628(Shardmon): Sprungklingen-Drohne, die Fragmentminen wirft.
+405adf78(Null-Hound): Nullfeld-Hund, der Buffs aufzulösen versucht.
+fa4cd27e(Grav-Keeper): Gravitations-Wyrm, der dich in den Boden drückt.
+aa822dc9(Ion-Fenrir): Leuchtende Bestie, deren Kettenblitzbarriere wartet.
+2708dd0d(Rift-Sailor): Teleportierende Drohne, die Schattenstrahlen abfeuert.
+29a599c7(Obsidian Scout): Spiegelnde Drohne mit Optik-Laser.
+a562ca0d(Lumen Vanguard): Holografischer Schildträger mit Laser-Clustern.
+# --- MYCEL-OBERBOSSE ---
+4ef7303e(Titan-Belagerer): Alpha-Boss mit kinetischen Barrikaden und Fragmenthieben.
+1033a021(Rift Marauder): Piratenleiter, der Räume zersplittert.
+42c50bea(Phantom Prime): Geist-Boss, der Eingaben spiegelt.
+21dea3ef(Aurora Leviathan): Aurora-Koloss, der Multi-Strahlen versendet.
+0dff43ae(Nexxus Anarch): Chaos-Kernboss, der Buffs stiehlt.

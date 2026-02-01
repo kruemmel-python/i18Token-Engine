@@ -1077,7 +1077,8 @@ def run_script(player: Player, script: str, label: str, engine: I18nEngine):
     effects = {}
     commands = []
     for clause in clauses:
-        if not clause.strip():
+        clause = clause.strip()
+        if not clause:
             continue
         key, value = clause.split(":", 1)
         val = float(value)
@@ -2181,12 +2182,31 @@ def run_battle(player, engine, is_boss=False):
     return False
     return False
 
+def select_game_catalog():
+    catalogs_dir = BASE_DIR / "game catalogs"
+    if not catalogs_dir.exists():
+        return BASE_CATALOG
+    catalog_files = sorted(catalogs_dir.glob("*_rpg_catalog.txt"))
+    if not catalog_files:
+        return BASE_CATALOG
+    print("\nVerfügbare Katalog-Spiele:")
+    for idx, path in enumerate(catalog_files, start=1):
+        print(f"({idx}) {path.stem}")
+    choice = input("> ").strip()
+    if choice.isdigit():
+        idx = int(choice) - 1
+        if 0 <= idx < len(catalog_files):
+            return catalog_files[idx]
+    return catalog_files[0]
+
+
 def main():
+    catalog_path = select_game_catalog()
     try:
         engine = I18nEngine()
-        engine.load_file(str(BASE_CATALOG))
+        engine.load_file(str(catalog_path))
     except Exception as e:
-        print(translate_with_fallback(engine, UI_TOKENS["error_generic"], [e]))
+        print(f"Fehler: {e}")
         return
 
     player = Player.load_game() or Player("Operator")
