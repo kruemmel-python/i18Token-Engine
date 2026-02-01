@@ -40,6 +40,89 @@
 000W23: Prophet: "Kryoschutzprotokolle markieren verbotene Offsets – dein Code sollte vorbereitet sein."
 000W24: Prophet: "Alpha-Bitfelder strahlen; deine Spur hinterlässt Signale, die dich belohnen könnten."
 000W25: Prophet: "Neue Verknüpfungen aktivieren Traits, die den nächsten Scan verändern."
+000W50: Alpha-Prime ist weiterhin das Herzstück.
+000W51: Die Daten-Wüste pulsiert mit Hitze und Fragmenten.
+000W52: Nebula Drift: A drift of neon data clouds steps into existence.
+000W53: Iron Bastion: A fortified core torches sending pulses across the grid.
+000W54: Pulse Abyss: A bottomless rumble of corrupted packets and shimmering void.
+000W5A: Alpha-Prime
+000W5B: Daten-Wüste
+000W5C: Nebula Drift
+000W5D: Iron Bastion
+000W5E: Pulse Abyss
+000WA0: Cosmic
+000WA1: Industrial
+000WA2: Corrupted
+000WA3: Core
+000WA4: Matrix
+000WA5: gelernt
+000WA6: verfügbar
+000WA7: aktiv
+000WA8: Sektor
+000WA9: Welt-Event
+000WAA: Knowledge
+000W60: >>> Neuer Sektor entdeckt: %0 (%1)
+000W61: >>> SHARD GELADEN: %0 (%1)
+000W62: >>> Modul %0%1 ausgeführt. Befehle: %2
+000W63: --- Token-Inventar ---
+000W64: Inventar leer.
+000W65: Ausrüstung: %0
+000W66: Keine
+000W67: Items:
+000W68: Nummer zum Ausrüsten (Enter zum Zurück) >
+000W69: (%0) %1 x%2
+000W6A: >>> %0 ausgerüstet.
+000W6B: Keine Items im Inventar.
+000W6C: Ressourcen:
+000W6D: - %0 x%1
+000W6E: --- Token-Markt ---
+000W6F: Preisfaktor: x%0
+000W70: (1) Items kaufen / (2) Ressourcen verkaufen / (3) Zurück
+000W71: Keine Items im Markt verfügbar.
+000W72: (%0) %1 [%2 Cr]
+000W73: Item wählen (Enter zum Abbrechen) >
+000W74: >>> %0 erworben für %1 Cr.
+000W75: Keine verkaufbaren Ressourcen im Inventar.
+000W76: Ressource verkaufen (Enter zum Abbrechen) >
+000W77: >>> %0 verkauft für %1 Cr.
+000W78: Ungültige Auswahl.
+000W79: Keine Rezepte verfügbar.
+000W7A: --- Handwerk ---
+000W7B: (%0) %1 → %2 (Kosten: %3 Cr)
+000W7C: Rezept wählen (Enter zum Abbrechen) >
+000W7D: Fehlende Tokens: %0
+000W7E: >>> Herstellung erfolgreich: %0
+000W7F: --- Skills ---
+000W80: (%0) %1 [%2] – %3 (Kosten: %4 Cr)
+000W81: Skill wählen zum Lernen/Aktualisieren (Enter zum Zurück) >
+000W82: >>> Aktiver Skill gesetzt: %0
+000W83: Skill bereits erlernt.
+000W84: Voraussetzung fehlt.
+000W85: Boss fordern? (j/n)
+000W86: STATUS: LVL %0 | HP: %1 | Credits: %2
+000W87: Standort: %0 [%1]
+000W88: Erfolge: %0
+000W89: --- Token-Status ---
+000W8A: Inventar:
+000W8B: - Leer
+000W8C: Skills: %0
+000W8D: Skills: Keine
+000W8E: Nutze das Token-Inventar (Option 9), um Items auszurüsten.
+000W8F: (%0) %1 [%2]%3
+000W90: >>> Ressourcen gefiltert: %0
+000W91: >>> Skill freigeschaltet: %0
+000W92: >>> VOLLTREFFER!
+000W93: Reparatur...
+000W94: > Bossphase aktiviert: Stabilität reduziert.
+000W95: (aktuell)
+000W96: Die Geschichte wurde bis hierhin gelesen.
+000W97: --- GESCHICHTE ---
+000W98: Noch keine Kapitel gelesen.
+000WAE: Matrix-Sitzung beendet...
+000WAF: Fehler: %0
+000WB0: Katalog-Load fehlgeschlagen: %0
+000WB1: \n%0: %1 HP | %2: %3 HP
+000WB3: STORY [%0]: %1
 # --- MENÜS (0002..) ---
 000200: (1) Sektor scannen (2) Navigation (3) NPC & Shop (4) Status & Quests (5) Highscores (6) Speichern & Beenden (7) Welt-Events
 000M100: --- MATRIX-MENÜ ---

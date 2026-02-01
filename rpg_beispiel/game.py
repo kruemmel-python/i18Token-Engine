@@ -127,10 +127,134 @@ WORLD_EVENTS = {
     },
 }
 
+UI_TOKENS = {
+    "sector_discovered": "000W60",
+    "shard_loaded": "000W61",
+    "module_executed": "000W62",
+    "inventory_header": "000W63",
+    "inventory_empty": "000W64",
+    "equipment_label": "000W65",
+    "label_none": "000W66",
+    "items_label": "000W67",
+    "inventory_select_prompt": "000W68",
+    "inventory_entry": "000W69",
+    "inventory_equipped": "000W6A",
+    "inventory_no_items": "000W6B",
+    "resources_label": "000W6C",
+    "resource_entry": "000W6D",
+    "market_header": "000W6E",
+    "price_factor": "000W6F",
+    "market_prompt": "000W70",
+    "market_no_items": "000W71",
+    "market_item_entry": "000W72",
+    "market_item_prompt": "000W73",
+    "market_item_bought": "000W74",
+    "market_no_resources": "000W75",
+    "resource_prompt": "000W76",
+    "resource_sold": "000W77",
+    "invalid_selection": "000W78",
+    "no_recipes": "000W79",
+    "craft_header": "000W7A",
+    "craft_entry": "000W7B",
+    "craft_prompt": "000W7C",
+    "craft_missing": "000W7D",
+    "craft_success": "000W7E",
+    "skills_header": "000W7F",
+    "skill_entry": "000W80",
+    "skill_prompt": "000W81",
+    "skill_activated": "000W82",
+    "skill_already": "000W83",
+    "skill_prereq": "000W84",
+    "boss_prompt": "000W85",
+    "status_line": "000W86",
+    "location_line": "000W87",
+    "achievements_line": "000W88",
+    "token_status_header": "000W89",
+    "inventory_list_label": "000W8A",
+    "inventory_empty_line": "000W8B",
+    "skills_list_line": "000W8C",
+    "skills_none_line": "000W8D",
+    "inventory_hint": "000W8E",
+    "sector_entry": "000W8F",
+    "resource_filtered": "000W90",
+    "skill_unlocked": "000W91",
+    "full_hit": "000W92",
+    "repair_action": "000W93",
+    "boss_phase": "000W94",
+    "current_marker": "000W95",
+    "story_progress": "000W96",
+    "story_header": "000W97",
+    "story_no_chapters": "000W98",
+    "story_node": "000WB3",
+    "matrix_exit": "000WAE",
+    "error_generic": "000WAF",
+    "error_catalog": "000WB0",
+    "battle_status": "000WB1",
+}
+
+SECTOR_NAME_TOKENS = {
+    "alpha_prime": "000W5A",
+    "daten_wuste": "000W5B",
+    "nebula_drift": "000W5C",
+    "iron_bastion": "000W5D",
+    "pulse_abyss": "000W5E",
+    "core": "000WA3",
+}
+
+SECTOR_TYPE_TOKENS = {
+    "cosmic": "000WA0",
+    "industrial": "000WA1",
+    "corrupted": "000WA2",
+    "matrix": "000WA4",
+}
+
+SKILL_STATUS_TOKENS = {
+    "learned": "000WA5",
+    "available": "000WA6",
+    "active": "000WA7",
+}
+
+FACTION_SOURCE_TOKENS = {
+    "sector": "000WA8",
+    "world_event": "000WA9",
+    "knowledge": "000WAA",
+}
+
+def resolve_player_shard_name(engine: I18nEngine, player: Player):
+    token = getattr(player, "shard_name_token", None)
+    if token:
+        return translate_with_fallback(engine, token)
+    return ""
+
+
+def resolve_player_shard_type(engine: I18nEngine, player: Player):
+    token = getattr(player, "shard_type_token", None)
+    if token:
+        return translate_with_fallback(engine, token)
+    return ""
+
 SECTOR_TEMPLATES = [
-    {"name": "Nebula Drift", "type": "Cosmic", "difficulty": 2, "level_req": 6, "description": "A drift of neon data clouds steps into existence."},
-    {"name": "Iron Bastion", "type": "Industrial", "difficulty": 3, "level_req": 9, "description": "A fortified core torches sending pulses across the grid."},
-    {"name": "Pulse Abyss", "type": "Corrupted", "difficulty": 4, "level_req": 12, "description": "A bottomless rumble of corrupted packets and shimmering void."},
+    {
+        "name_token": SECTOR_NAME_TOKENS["nebula_drift"],
+        "type_token": SECTOR_TYPE_TOKENS["cosmic"],
+        "difficulty": 2,
+        "level_req": 6,
+        "description_token": "000W52",
+    },
+    {
+        "name_token": SECTOR_NAME_TOKENS["iron_bastion"],
+        "type_token": SECTOR_TYPE_TOKENS["industrial"],
+        "difficulty": 3,
+        "level_req": 9,
+        "description_token": "000W53",
+    },
+    {
+        "name_token": SECTOR_NAME_TOKENS["pulse_abyss"],
+        "type_token": SECTOR_TYPE_TOKENS["corrupted"],
+        "difficulty": 4,
+        "level_req": 12,
+        "description_token": "000W54",
+    },
 ]
 
 MARKET_PRICE_TOKEN = "000B200"
@@ -191,15 +315,15 @@ CALR_KNOWLEDGE_FRAGMENTS = {
 dynamic_sector_counter = 0
 
 
-def register_sector_entry(sector_id, name, type_, token=None, file=None, difficulty=0, level_offset=0, description=None, dynamic=False):
+def register_sector_entry(sector_id, name_token, type_token, token=None, file=None, difficulty=0, level_offset=0, description_token=None, dynamic=False):
     sector_registry[sector_id] = {
-        "name": name,
-        "type": type_,
+        "name_token": name_token,
+        "type_token": type_token,
         "token": token,
         "file": file,
         "difficulty": difficulty,
         "level_offset": level_offset,
-        "description": description,
+        "description_token": description_token,
         "dynamic": dynamic,
     }
 
@@ -208,23 +332,23 @@ def init_sector_registry():
     sector_registry.clear()
     register_sector_entry(
         "000W10",
-        "Alpha-Prime",
-        "Industrial",
+        SECTOR_NAME_TOKENS["alpha_prime"],
+        SECTOR_TYPE_TOKENS["industrial"],
         token="000W10",
         file=BASE_DIR / "sector_alpha.txt",
         difficulty=0,
         level_offset=0,
-        description="Alpha-Prime ist weiterhin das Herzstück.",
+        description_token="000W50",
     )
     register_sector_entry(
         "000W11",
-        "Daten-Wüste",
-        "Corrupted",
+        SECTOR_NAME_TOKENS["daten_wuste"],
+        SECTOR_TYPE_TOKENS["corrupted"],
         token="000W11",
         file=BASE_DIR / "sector_wasteland.txt",
         difficulty=1,
         level_offset=1,
-        description="Die Daten-Wüste pulsiert mit Hitze und Fragmenten.",
+        description_token="000W51",
     )
  
 init_sector_registry()
@@ -235,13 +359,17 @@ def set_sector_from_registry(engine: I18nEngine, player: Player, sector_id: str,
     if not info:
         return False
     player.current_sector_id = sector_id
-    player.shard_name = info["name"]
-    player.shard_type = info["type"]
+    if info.get("name_token"):
+        player.shard_name_token = info["name_token"]
+    if info.get("type_token"):
+        player.shard_type_token = info["type_token"]
     player.current_shard_file = info.get("file")
     if info.get("token"):
         player.current_shard_token = info["token"]
-    if announce and info.get("description"):
-        print(info["description"])
+    if announce:
+        description_token = info.get("description_token")
+        if description_token:
+            print(translate_with_fallback(engine, description_token))
     return True
 
 
@@ -251,12 +379,12 @@ def generate_dynamic_sector(template):
     sector_id = f"DYN{dynamic_sector_counter:02d}"
     register_sector_entry(
         sector_id,
-        template["name"],
-        template["type"],
+        template["name_token"],
+        template["type_token"],
         file=None,
         difficulty=template["difficulty"],
         level_offset=template["difficulty"],
-        description=template["description"],
+        description_token=template.get("description_token"),
         dynamic=True,
     )
     return sector_id
@@ -264,10 +392,12 @@ def generate_dynamic_sector(template):
 
 def expand_sectors_for_level(player: Player, engine: I18nEngine):
     for template in SECTOR_TEMPLATES:
-        exists = any(info["name"] == template["name"] for info in sector_registry.values())
+        exists = any(info.get("name_token") == template["name_token"] for info in sector_registry.values())
         if player.lvl >= template["level_req"] and not exists:
             new_id = generate_dynamic_sector(template)
-            print(f">>> Neuer Sektor entdeckt: {template['name']} ({template['type']})")
+            name_label = translate_with_fallback(engine, template["name_token"])
+            type_label = translate_with_fallback(engine, template["type_token"])
+            print(translate_with_fallback(engine, UI_TOKENS["sector_discovered"], [name_label, type_label]))
             return new_id
     return None
 
@@ -357,8 +487,8 @@ class Player:
         self.knowledge_packages = []
         self.current_shard_token = DEFAULT_SHARD_TOKEN
         self.current_shard_file = None
-        self.shard_name = "Core"
-        self.shard_type = "Matrix"
+        self.shard_name_token = SECTOR_NAME_TOKENS["core"]
+        self.shard_type_token = SECTOR_TYPE_TOKENS["matrix"]
         self.current_sector_id = DEFAULT_SECTOR_ID
         self.faction_standing = {k: 0 for k in FACTIONS}
         self.faction_standing = {k: 0 for k in FACTIONS}
@@ -620,14 +750,17 @@ def compose_calr_script(engine: I18nEngine, player: Player):
     return "|".join([label] + fragments)
 
 
-def adjust_faction(engine: I18nEngine, player: Player, faction_key: str, delta: int, source: str | None = None):
+def adjust_faction(engine: I18nEngine, player: Player, faction_key: str, delta: int, source_token: str | None = None):
     if faction_key not in FACTIONS:
         return
     prev = player.faction_standing.get(faction_key, 0)
     value = prev + delta
     player.faction_standing[faction_key] = value
     name = translate_with_fallback(engine, FACTIONS[faction_key]["name_token"])
-    label = source or translate_with_fallback(engine, FACTIONS[faction_key]["desc_token"])
+    if source_token and source_token.startswith("000"):
+        label = translate_with_fallback(engine, source_token)
+    else:
+        label = source_token or translate_with_fallback(engine, FACTIONS[faction_key]["desc_token"])
     change = f"{delta:+d}"
     print(translate_with_fallback(engine, "000G20", [name, change]))
 
@@ -732,7 +865,11 @@ def world_event_menu(engine: I18nEngine, player: Player):
     active_token = get_active_world_event_token()
     for idx, event_id in enumerate(WORLD_EVENTS, start=1):
         label = translate_with_fallback(engine, WORLD_EVENTS[event_id]["name_token"])
-        marker = " (aktiv)" if event_id == active_token else ""
+        marker = (
+            f" ({translate_with_fallback(engine, SKILL_STATUS_TOKENS['active'])})"
+            if event_id == active_token
+            else ""
+        )
         print(f"({idx}) {label}{marker}")
     print(translate_with_fallback(engine, "000W93"))
     choice = input("> ").strip()
@@ -753,7 +890,7 @@ def world_event_menu(engine: I18nEngine, player: Player):
         return
     if set_active_world_event(token):
         refresh_runtime_catalog(engine, player)
-        apply_faction_influences(engine, player, WORLD_EVENT_FACTION_EFFECTS.get(token, []), "Welt-Event")
+        apply_faction_influences(engine, player, WORLD_EVENT_FACTION_EFFECTS.get(token, []), FACTION_SOURCE_TOKENS["world_event"])
         label = translate_with_fallback(engine, WORLD_EVENTS[token]["name_token"])
         print(translate_with_fallback(engine, WORLD_EVENTS[token]["activation_token"], [label]))
 
@@ -775,7 +912,7 @@ def unlock_knowledge(engine: I18nEngine, player: Player, pkg_id: str):
     player.knowledge_packages.append(pkg_id)
     append_logbook_entry(pkg_id, pkg["tokens"])
     refresh_runtime_catalog(engine, player)
-    apply_faction_influences(engine, player, KNOWLEDGE_FACTION_INFLUENCE.get(pkg_id, []), "Knowledge")
+    apply_faction_influences(engine, player, KNOWLEDGE_FACTION_INFLUENCE.get(pkg_id, []), FACTION_SOURCE_TOKENS["knowledge"])
     return True
 
 
@@ -811,11 +948,15 @@ def apply_shard_token(engine: I18nEngine, player: Player, token_id: str, announc
         return False
     player.current_shard_token = token_id
     player.current_shard_file = shard_path
-    player.shard_name = info.get("NAME", player.shard_name)
-    player.shard_type = info.get("TYPE", player.shard_type)
-    if announce:
-        print(f">>> SHARD GELADEN: {player.shard_name} ({player.shard_type})")
-    set_sector_from_registry(engine, player, token_id)
+    success = set_sector_from_registry(engine, player, token_id)
+    if announce and success:
+        print(
+            translate_with_fallback(
+                engine,
+                UI_TOKENS["shard_loaded"],
+                [resolve_player_shard_name(engine, player), resolve_player_shard_type(engine, player)],
+            )
+        )
     return True
 
 
@@ -849,15 +990,29 @@ def refresh_runtime_catalog(engine: I18nEngine, player: Player):
 
 def show_navigation(engine: I18nEngine, player: Player):
     print("\n" + translate_with_fallback(engine, "000W00"))
-    print(translate_with_fallback(engine, "000W01", [player.shard_name, player.shard_type]))
+    current_name = resolve_player_shard_name(engine, player)
+    current_type = resolve_player_shard_type(engine, player)
+    print(translate_with_fallback(engine, "000W01", [current_name, current_type]))
     print(translate_with_fallback(engine, "000W02"))
     print(translate_with_fallback(engine, "000W06"))
     sector_ids = list(sector_registry.keys())
     deal_map = {}
     for idx, sector_id in enumerate(sector_ids, start=1):
         info = sector_registry[sector_id]
-        marker = " (aktuell)" if sector_id == player.current_sector_id else ""
-        print(f"({idx}) {info['name']} [{info['type']}]{marker}")
+        marker = (
+            translate_with_fallback(engine, UI_TOKENS["current_marker"])
+            if sector_id == player.current_sector_id
+            else ""
+        )
+        name_label = translate_with_fallback(engine, info.get("name_token", ""))
+        type_label = translate_with_fallback(engine, info.get("type_token", ""))
+        print(
+            translate_with_fallback(
+                engine,
+                UI_TOKENS["sector_entry"],
+                [idx, name_label, type_label, marker],
+            )
+        )
         deal_map[str(idx)] = sector_id
     choice = input("> ").strip()
     if not choice.isdigit():
@@ -868,13 +1023,15 @@ def show_navigation(engine: I18nEngine, player: Player):
     target_sector = sector_ids[target_idx]
     info = sector_registry[target_sector]
     if target_sector == player.current_sector_id:
-        print(translate_with_fallback(engine, "000W03", [player.shard_name]))
+        print(translate_with_fallback(engine, "000W03", [current_name]))
         return
     if info.get("token"):
         if apply_shard_token(engine, player, info["token"], announce=True):
             set_sector_from_registry(engine, player, target_sector)
             refresh_runtime_catalog(engine, player)
-            print(translate_with_fallback(engine, "000W04", [player.shard_name, player.shard_type]))
+            current_name = resolve_player_shard_name(engine, player)
+            current_type = resolve_player_shard_type(engine, player)
+            print(translate_with_fallback(engine, "000W04", [current_name, current_type]))
     else:
         set_sector_from_registry(engine, player, target_sector, announce=True)
 
@@ -915,7 +1072,7 @@ def parse_script(script: str):
     return script, []
 
 
-def run_script(player: Player, script: str, label: str):
+def run_script(player: Player, script: str, label: str, engine: I18nEngine):
     name, clauses = parse_script(script)
     effects = {}
     commands = []
@@ -961,7 +1118,13 @@ def run_script(player: Player, script: str, label: str):
             effects["enemy_atk_mul"] = effects.get("enemy_atk_mul", 1.0) * val
             commands.append(f"{key}*{val}")
     detail = f" ({name})" if name else ""
-    print(f">>> Modul {label}{detail} ausgeführt. Befehle: {', '.join(commands)}.")
+    print(
+        translate_with_fallback(
+            engine,
+            UI_TOKENS["module_executed"],
+            [label, detail, ", ".join(commands)],
+        )
+    )
     return effects
 
 
@@ -1029,51 +1192,86 @@ def register_menu_action(key):
 
 @register_menu_action("INV")
 def handle_inventory_action(engine: I18nEngine, player: Player):
-    print("\n--- Token-Inventar ---")
+    print("\n" + translate_with_fallback(engine, UI_TOKENS["inventory_header"]))
     counts = inventory_counts(player)
     if not counts:
-        print("Inventar leer.")
+        print(translate_with_fallback(engine, UI_TOKENS["inventory_empty"]))
         return
     active_weapon = player.equipped_items.get("weapon")
-    print(f"Ausrüstung: {get_token_label(engine, active_weapon) if active_weapon else 'Keine'}")
+    equipment_label = (
+        get_token_label(engine, active_weapon)
+        if active_weapon
+        else translate_with_fallback(engine, UI_TOKENS["label_none"])
+    )
+    print(
+        translate_with_fallback(engine, UI_TOKENS["equipment_label"], [equipment_label])
+    )
     items = sorted([tok for tok in counts if tok.startswith("000I")])
     resources = sorted([tok for tok in counts if tok.startswith("000N")])
     if items:
-        print("Items:")
+        print(translate_with_fallback(engine, UI_TOKENS["items_label"]))
         for idx, token in enumerate(items, start=1):
-            print(f"({idx}) {get_token_label(engine, token)} x{counts[token]}")
-        sel = input("Nummer zum Ausrüsten (Enter zum Zurück) > ").strip()
+            print(
+                translate_with_fallback(
+                    engine,
+                    UI_TOKENS["inventory_entry"],
+                    [idx, get_token_label(engine, token), counts[token]],
+                )
+            )
+        sel = input(translate_with_fallback(engine, UI_TOKENS["inventory_select_prompt"])).strip()
         if sel.isdigit():
             idx = int(sel) - 1
             if 0 <= idx < len(items):
                 player.equipped_items["weapon"] = items[idx]
-                print(f">>> {get_token_label(engine, items[idx])} ausgerüstet.")
+                print(
+                    translate_with_fallback(
+                        engine,
+                        UI_TOKENS["inventory_equipped"],
+                        [get_token_label(engine, items[idx])],
+                    )
+                )
     else:
-        print("Keine Items im Inventar.")
+        print(translate_with_fallback(engine, UI_TOKENS["inventory_no_items"]))
     if resources:
-        print("Ressourcen:")
+        print(translate_with_fallback(engine, UI_TOKENS["resources_label"]))
         for token in resources:
-            print(f"- {get_token_label(engine, token)} x{counts[token]}")
+            print(
+                translate_with_fallback(
+                    engine,
+                    UI_TOKENS["resource_entry"],
+                    [get_token_label(engine, token), counts[token]],
+                )
+            )
 
 
 @register_menu_action("MARK")
 def handle_market_action(engine: I18nEngine, player: Player):
     price_map = parse_market_price_token(engine)
     multiplier, extra = get_price_modifiers(engine, player)
-    print("\n--- Token-Markt ---")
-    print(f"Preisfaktor: x{multiplier:.2f}")
+    print("\n" + translate_with_fallback(engine, UI_TOKENS["market_header"]))
+    print(
+        translate_with_fallback(
+            engine, UI_TOKENS["price_factor"], [f"{multiplier:.2f}"]
+        )
+    )
     while True:
-        print("(1) Items kaufen / (2) Ressourcen verkaufen / (3) Zurück")
+        print(translate_with_fallback(engine, UI_TOKENS["market_prompt"]))
         choice = input("> ").strip()
         if choice == "1":
             available = sorted(price_map["items"].items())
             if not available:
-                print("Keine Items im Markt verfügbar.")
+                print(translate_with_fallback(engine, UI_TOKENS["market_no_items"]))
                 continue
             for idx, (token, base) in enumerate(available, start=1):
                 price = max(1, int(round(base * multiplier + extra)))
-                print(f"({idx}) {get_token_label(engine, token)} [{price} Cr]")
-            sel = input("Item wählen (Enter zum Abbrechen) > ").strip()
+                print(
+                    translate_with_fallback(
+                        engine,
+                        UI_TOKENS["market_item_entry"],
+                        [idx, get_token_label(engine, token), price],
+                    )
+                )
+            sel = input(translate_with_fallback(engine, UI_TOKENS["market_item_prompt"])).strip()
             if not sel.isdigit():
                 continue
             idx = int(sel) - 1
@@ -1083,7 +1281,13 @@ def handle_market_action(engine: I18nEngine, player: Player):
                 if player.credits >= price:
                     player.credits -= price
                     player.inventory_tokens.append(token)
-                    print(f">>> {get_token_label(engine, token)} erworben für {price} Cr.")
+                    print(
+                        translate_with_fallback(
+                            engine,
+                            UI_TOKENS["market_item_bought"],
+                            [get_token_label(engine, token), price],
+                        )
+                    )
                 else:
                     print(engine.translate("000C26", [price]))
         elif choice == "2":
@@ -1092,13 +1296,21 @@ def handle_market_action(engine: I18nEngine, player: Player):
                 if tok in price_map["resources"] or tok in RESOURCE_BASE_VALUES
             })
             if not resource_entries:
-                print("Keine verkaufbaren Ressourcen im Inventar.")
+                print(
+                    translate_with_fallback(engine, UI_TOKENS["market_no_resources"])
+                )
                 continue
             for idx, token in enumerate(resource_entries, start=1):
                 base_price = price_map["resources"].get(token, RESOURCE_BASE_VALUES.get(token, 0))
                 price = max(1, int(round(base_price * 0.5 * multiplier + extra)))
-                print(f"({idx}) {get_token_label(engine, token)} [{price} Cr]")
-            sel = input("Ressource verkaufen (Enter zum Abbrechen) > ").strip()
+                print(
+                    translate_with_fallback(
+                        engine,
+                        UI_TOKENS["market_item_entry"],
+                        [idx, get_token_label(engine, token), price],
+                    )
+                )
+            sel = input(translate_with_fallback(engine, UI_TOKENS["resource_prompt"])).strip()
             if not sel.isdigit():
                 continue
             idx = int(sel) - 1
@@ -1108,11 +1320,17 @@ def handle_market_action(engine: I18nEngine, player: Player):
                 price = max(1, int(round(base_price * 0.5 * multiplier + extra)))
                 remove_inventory_tokens(player, [token])
                 player.credits += price
-                print(f">>> {get_token_label(engine, token)} verkauft für {price} Cr.")
+                print(
+                    translate_with_fallback(
+                        engine,
+                        UI_TOKENS["resource_sold"],
+                        [get_token_label(engine, token), price],
+                    )
+                )
         elif choice == "3":
             break
         else:
-            print("Ungültige Auswahl.")
+            print(translate_with_fallback(engine, UI_TOKENS["invalid_selection"]))
 
 
 @register_menu_action("CRAFT")
@@ -1120,13 +1338,19 @@ def handle_craft_action(engine: I18nEngine, player: Player):
     recipes = [parse_recipe_token(engine, tid) for tid in RECIPE_TOKENS]
     recipes = [recipe for recipe in recipes if recipe.get("requirements") and recipe.get("products")]
     if not recipes:
-        print("Keine Rezepte verfügbar.")
+        print(translate_with_fallback(engine, UI_TOKENS["no_recipes"]))
         return
-    print("\n--- Handwerk ---")
+    print("\n" + translate_with_fallback(engine, UI_TOKENS["craft_header"]))
     for idx, recipe in enumerate(recipes, start=1):
         req_labels = ", ".join(get_token_label(engine, tok) for tok in recipe["requirements"])
-        print(f"({idx}) {recipe['label']} → {req_labels} (Kosten: {recipe['cost']} Cr)")
-    sel = input("Rezept wählen (Enter zum Abbrechen) > ").strip()
+        print(
+            translate_with_fallback(
+                engine,
+                UI_TOKENS["craft_entry"],
+                [idx, recipe["label"], req_labels, recipe["cost"]],
+            )
+        )
+    sel = input(translate_with_fallback(engine, UI_TOKENS["craft_prompt"])).strip()
     if not sel.isdigit():
         return
     idx = int(sel) - 1
@@ -1139,14 +1363,16 @@ def handle_craft_action(engine: I18nEngine, player: Player):
     if not inventory_has_tokens(player, recipe["requirements"]):
         missing = [tok for tok in recipe["requirements"] if player.inventory_tokens.count(tok) < recipe["requirements"].count(tok)]
         missing_labels = ", ".join(get_token_label(engine, tok) for tok in missing)
-        print(f"Fehlende Tokens: {missing_labels}")
+        print(translate_with_fallback(engine, UI_TOKENS["craft_missing"], [missing_labels]))
         return
     remove_inventory_tokens(player, recipe["requirements"])
     player.credits -= recipe["cost"]
     for product in recipe["products"]:
         player.inventory_tokens.append(product)
     product_labels = ", ".join(get_token_label(engine, tok) for tok in recipe["products"])
-    print(f">>> Herstellung erfolgreich: {product_labels}")
+    print(
+        translate_with_fallback(engine, UI_TOKENS["craft_success"], [product_labels])
+    )
 
 
 @register_menu_action("SKL")
@@ -1154,17 +1380,24 @@ def handle_skill_action(engine: I18nEngine, player: Player):
     price_map = parse_market_price_token(engine)
     multiplier, extra = get_price_modifiers(engine, player)
     skill_ids = list(SKILL_TREE.keys())
-    print("\n--- Skills ---")
+    print("\n" + translate_with_fallback(engine, UI_TOKENS["skills_header"]))
     for idx, skill_id in enumerate(skill_ids, start=1):
         label = get_token_label(engine, skill_id)
         desc = translate_with_fallback(engine, SKILL_TREE[skill_id]["desc_token"])
-        status = "gelernt" if skill_id in player.skill_tokens else "verfügbar"
+        status_key = "learned" if skill_id in player.skill_tokens else "available"
         if skill_id == player.active_skill_token:
-            status = "aktiv"
+            status_key = "active"
+        status = translate_with_fallback(engine, SKILL_STATUS_TOKENS[status_key])
         cost = price_map["skills"].get(skill_id, SKILL_TREE[skill_id]["cost"])
         final_cost = max(1, int(round(cost * multiplier + extra)))
-        print(f"({idx}) {label} [{status}] – {desc} (Kosten: {final_cost} Cr)")
-    sel = input("Skill wählen zum Lernen/Aktualisieren (Enter zum Zurück) > ").strip()
+        print(
+            translate_with_fallback(
+                engine,
+                UI_TOKENS["skill_entry"],
+                [idx, label, status, desc, final_cost],
+            )
+        )
+    sel = input(translate_with_fallback(engine, UI_TOKENS["skill_prompt"])).strip()
     if not sel.isdigit():
         return
     idx = int(sel) - 1
@@ -1175,13 +1408,19 @@ def handle_skill_action(engine: I18nEngine, player: Player):
     if skill_id in player.skill_tokens:
         if skill_config.get("type") == "active":
             player.active_skill_token = skill_id
-            print(f">>> Aktiver Skill gesetzt: {get_token_label(engine, skill_id)}")
+            print(
+                translate_with_fallback(
+                    engine,
+                    UI_TOKENS["skill_activated"],
+                    [get_token_label(engine, skill_id)],
+                )
+            )
         else:
-            print("Skill bereits erlernt.")
+            print(translate_with_fallback(engine, UI_TOKENS["skill_already"]))
         return
     prereq = skill_config.get("prereq")
     if prereq and prereq not in player.skill_tokens:
-        print("Voraussetzung fehlt.")
+        print(translate_with_fallback(engine, UI_TOKENS["skill_prereq"]))
         return
     cost = price_map["skills"].get(skill_id, skill_config["cost"])
     final_cost = max(1, int(round(cost * multiplier + extra)))
@@ -1237,7 +1476,13 @@ def handle_shop_action(engine: I18nEngine, player: Player):
     for deal in available_deals:
         price = compute_deal_price(player, deal)
         label = translate_with_fallback(engine, deal["name_token"])
-        print(f"({option_base}) {label} [{price} Cr]")
+        print(
+            translate_with_fallback(
+                engine,
+                UI_TOKENS["market_item_entry"],
+                [option_base, label, price],
+            )
+        )
         deal_options[str(option_base)] = (deal, price)
         option_base += 1
     sc = input(engine.translate("000C21") + "\n> ").strip()
@@ -1288,17 +1533,36 @@ def handle_shop_action(engine: I18nEngine, player: Player):
             print(translate_with_fallback(engine, "000C32", [translate_with_fallback(engine, deal["name_token"]), price]))
         else:
             print(engine.translate("000C26", [price]))
-    if input("Boss fordern? (j/n) ") == "j":
+    if input(translate_with_fallback(engine, UI_TOKENS["boss_prompt"]) + " ") == "j":
         run_battle(player, engine, True)
 
 
 @register_menu_action("STATUS")
 def handle_status_action(engine: I18nEngine, player: Player):
-    print(f"\nSTATUS: LVL {int(player.lvl)} | HP: {int(player.hp)} | Credits: {int(player.credits)}")
-    print(f"Standort: {player.shard_name} [{player.shard_type}]")
+    print(
+        translate_with_fallback(
+            engine,
+            UI_TOKENS["status_line"],
+            [int(player.lvl), int(player.hp), int(player.credits)],
+        )
+    )
+    print(
+        translate_with_fallback(
+            engine,
+            UI_TOKENS["location_line"],
+            [resolve_player_shard_name(engine, player), resolve_player_shard_type(engine, player)],
+        )
+    )
     print(engine.translate("000D01"))
     print(engine.translate("000D02", [int(player.quest_kills), int(player.quest_target)]))
-    print("Erfolge: " + (", ".join([engine.translate(a) for a in player.achievements]) if player.achievements else "Keine"))
+    achievements_display = (
+        ", ".join(engine.translate(a) for a in player.achievements)
+        if player.achievements
+        else translate_with_fallback(engine, UI_TOKENS["label_none"])
+    )
+    print(
+        translate_with_fallback(engine, UI_TOKENS["achievements_line"], [achievements_display])
+    )
     trait_line = trait_message(engine, player)
     if trait_line:
         print(trait_line)
@@ -1306,31 +1570,49 @@ def handle_status_action(engine: I18nEngine, player: Player):
         print(line)
     for line in faction_status_lines(engine, player):
         print(line)
-    print("\n--- Token-Status ---")
+    print("\n" + translate_with_fallback(engine, UI_TOKENS["token_status_header"]))
     active_weapon = player.equipped_items.get("weapon")
-    print(f"Ausrüstung: {get_token_label(engine, active_weapon) if active_weapon else 'Keine'}")
+    equipment_label = (
+        get_token_label(engine, active_weapon)
+        if active_weapon
+        else translate_with_fallback(engine, UI_TOKENS["label_none"])
+    )
+    print(
+        translate_with_fallback(engine, UI_TOKENS["equipment_label"], [equipment_label])
+    )
     inv_counts = inventory_counts(player)
     if inv_counts:
-        print("Inventar:")
+        print(translate_with_fallback(engine, UI_TOKENS["inventory_list_label"]))
         for token, amount in inv_counts.items():
-            print(f"- {get_token_label(engine, token)} x{amount}")
+            print(
+                translate_with_fallback(
+                    engine, UI_TOKENS["resource_entry"], [get_token_label(engine, token), amount]
+                )
+            )
     else:
-        print("- Leer")
+        print(translate_with_fallback(engine, UI_TOKENS["inventory_empty_line"]))
     if player.skill_tokens:
         skill_lines = []
         for skill_id in player.skill_tokens:
             label = get_token_label(engine, skill_id)
-            suffix = " (aktiv)" if skill_id == player.active_skill_token else ""
-            skill_lines.append(f"{label}{suffix}")
-        print("Skills: " + ", ".join(skill_lines))
+        if skill_id == player.active_skill_token:
+            suffix = f" ({translate_with_fallback(engine, SKILL_STATUS_TOKENS['active'])})"
+        else:
+            suffix = ""
+        skill_lines.append(f"{label}{suffix}")
+        print(
+            translate_with_fallback(
+                engine, UI_TOKENS["skills_list_line"], [", ".join(skill_lines)]
+            )
+        )
     else:
-        print("Skills: Keine")
+        print(translate_with_fallback(engine, UI_TOKENS["skills_none_line"]))
     sub = input(engine.translate("000202") + "\n> ")
     if sub == "1" and player.kits > 0:
         player.hp = min(player.max_hp, player.hp + 40)
         player.kits -= 1
     elif sub == "2":
-        print("Nutze das Token-Inventar (Option 9), um Items auszurüsten.")
+        print(translate_with_fallback(engine, UI_TOKENS["inventory_hint"]))
 
 
 @register_menu_action("HIGH")
@@ -1427,12 +1709,18 @@ def play_story_sequence(engine: I18nEngine, player: Player):
         text_args = [player.name, int(player.lvl), int(player.kills)]
         text = translate_with_fallback(engine, node["text_token"], text_args)
         print("\n" + ("-" * 40))
-        print(f"STORY [{node['node_key']}]: {text}")
+        print(
+            translate_with_fallback(
+                engine,
+                UI_TOKENS["story_node"],
+                [node["node_key"], text],
+            )
+        )
         apply_story_effects(player, node)
         if not node["choices"]:
             player.story_history.append((node["node_key"], "Abschluss"))
             player.story_state = "completed"
-            print("Die Geschichte wurde bis hierhin gelesen.")
+            print(translate_with_fallback(engine, UI_TOKENS["story_progress"]))
             return
         labels = []
         for idx, choice in enumerate(node["choices"], start=1):
@@ -1470,11 +1758,16 @@ def trigger_story_progress(engine: I18nEngine, player: Player):
 @register_menu_action("STORY")
 def handle_story_action(engine: I18nEngine, player: Player):
     if player.story_history:
-        print("\n--- GESCHICHTE ---")
+        print("\n" + translate_with_fallback(engine, UI_TOKENS["story_header"]))
         for idx, (title, choice) in enumerate(player.story_history, start=1):
             print(f"{idx}. {title} → {choice}")
     else:
-        print("\n--- GESCHICHTE ---\nNoch keine Kapitel gelesen.")
+        print(
+            "\n"
+            + translate_with_fallback(engine, UI_TOKENS["story_header"])
+            + "\n"
+            + translate_with_fallback(engine, UI_TOKENS["story_no_chapters"])
+        )
     trigger_story_progress(engine, player)
 
 
@@ -1496,11 +1789,11 @@ def execute_token_script(player: Player, engine: I18nEngine, token_id: str):
     script = resolve_catalog_token(engine, token_id)
     if "⟦" in script:
         return {}
-    return run_script(player, script, token_id)
+    return run_script(player, script, token_id, engine)
 
 
-def execute_dynamic_script(player: Player, script: str, label: str = "CALR"):
-    return run_script(player, script, label)
+def execute_dynamic_script(player: Player, script: str, engine: I18nEngine, label: str = "CALR"):
+    return run_script(player, script, label, engine)
 
 
 def get_token_label(engine: I18nEngine, token: str) -> str:
@@ -1595,7 +1888,9 @@ def gather_resources(engine: I18nEngine, player: Player) -> list[str]:
         gained.append(token)
     if gained:
         labels = ", ".join(get_token_label(engine, tok) for tok in gained)
-        print(f">>> Ressourcen gefiltert: {labels}")
+        print(
+            translate_with_fallback(engine, UI_TOKENS["resource_filtered"], [labels])
+        )
     return gained
 
 
@@ -1683,7 +1978,13 @@ def acquire_skill(engine: I18nEngine, player: Player, skill_id: str) -> bool:
     append_logbook_entry(skill_id, [skill_id])
     if SKILL_TREE.get(skill_id, {}).get("type") == "active" and not player.active_skill_token:
         player.active_skill_token = skill_id
-    print(f">>> Skill freigeschaltet: {get_token_label(engine, skill_id)}")
+    print(
+        translate_with_fallback(
+            engine,
+            UI_TOKENS["skill_unlocked"],
+            [get_token_label(engine, skill_id)],
+        )
+    )
     return True
 
 LORE_TOKENS = ["000B10", "000B11", "000B12", "000B13", "000B14", "000B15"]
@@ -1729,12 +2030,12 @@ def run_battle(player, engine, is_boss=False):
     calr_script = compose_calr_script(engine, player)
     calr_effects = None
     if calr_script:
-        calr_effects = execute_dynamic_script(player, calr_script, "CALR")
+        calr_effects = execute_dynamic_script(player, calr_script, engine, "CALR")
 
     scaling_script = compose_enemy_scaling_script(engine, player)
     scaling_effects = None
     if scaling_script:
-        scaling_effects = execute_dynamic_script(player, scaling_script, "SCALING")
+        scaling_effects = execute_dynamic_script(player, scaling_script, engine, "SCALING")
 
     lore = " ".join(engine.translate(tok) for tok in random.sample(LORE_TOKENS, 3))
     print("\n" + lore)
@@ -1770,7 +2071,12 @@ def run_battle(player, engine, is_boss=False):
     
     story_effects = player.story_effects or {}
     e_hp, e_atk = apply_enemy_effects(e_hp, e_atk, [calr_effects, scaling_effects, story_effects, item_effects])
-    print(engine.translate("000300", [e_name, int(e_hp), player.shard_name]))
+    print(
+        engine.translate(
+            "000300",
+            [e_name, int(e_hp), resolve_player_shard_name(engine, player)],
+        )
+    )
     print(engine.translate("000A03" if is_boss else "000A01"))
 
     defense_bonus = item_effects.get("def_add", 0)
@@ -1783,8 +2089,14 @@ def run_battle(player, engine, is_boss=False):
             boss_effects = execute_token_script(player, engine, "000B50")
             if boss_effects.get("stability_penalty"):
                 stability -= boss_effects.get("stability_penalty")
-                print("> Bossphase aktiviert: Stabilität reduziert.")
-        print(f"\n{player.name}: {int(player.hp)} HP | {e_name}: {int(e_hp)} HP")
+                print(translate_with_fallback(engine, UI_TOKENS["boss_phase"]))
+        print(
+            translate_with_fallback(
+                engine,
+                UI_TOKENS["battle_status"],
+                [player.name, int(player.hp), e_name, int(e_hp)],
+            )
+        )
         prompt = engine.translate("000201")
         if skill_ready:
             prompt += " (S=Skill)"
@@ -1807,10 +2119,10 @@ def run_battle(player, engine, is_boss=False):
             dmg = current_atk + random.randint(-2, 2)
         elif choice == "2" and random.random() > 0.4:
             dmg = int(current_atk * 1.8)
-            print(">>> VOLLTREFFER!")
+            print(translate_with_fallback(engine, UI_TOKENS["full_hit"]))
         elif choice == "3":
             player.hp = min(player.max_hp, player.hp + 25)
-            print("Reparatur...")
+            print(translate_with_fallback(engine, UI_TOKENS["repair_action"]))
 
         if dmg > 0:
             crit_add = item_effects.get("crit_add", 0)
@@ -1837,7 +2149,7 @@ def run_battle(player, engine, is_boss=False):
         player.xp += 50
         player.kills += 1
         player.quest_kills += 1
-        apply_faction_influences(engine, player, SHARD_FACTION_INFLUENCE.get(player.current_shard_token, []), "Sektor")
+        apply_faction_influences(engine, player, SHARD_FACTION_INFLUENCE.get(player.current_shard_token, []), FACTION_SOURCE_TOKENS["sector"])
         print(engine.translate("000302", [e_name, 50, cr]))
         if is_boss:
             print(engine.translate("000B03"))
@@ -1874,7 +2186,8 @@ def main():
         engine = I18nEngine()
         engine.load_file(str(BASE_CATALOG))
     except Exception as e:
-        print(f"Fehler: {e}"); return
+        print(translate_with_fallback(engine, UI_TOKENS["error_generic"], [e]))
+        return
 
     player = Player.load_game() or Player("Operator")
     for pkg_id in player.knowledge_packages:
@@ -1885,7 +2198,8 @@ def main():
     try:
         refresh_runtime_catalog(engine, player)
     except Exception as e:
-        print(f"Katalog-Load fehlgeschlagen: {e}"); return
+        print(translate_with_fallback(engine, UI_TOKENS["error_catalog"], [e]))
+        return
     trigger_story_progress(engine, player)
     print("\n" + engine.translate("000100"))
 
@@ -1912,7 +2226,7 @@ def main():
         outcome = handle_menu_input(engine, player, c, menu_entries)
         if outcome == "EXIT":
             break
-    input("\nMatrix-Sitzung beendet...")
+    input("\n" + translate_with_fallback(engine, UI_TOKENS["matrix_exit"]))
 
 
 if __name__ == "__main__":
