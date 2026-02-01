@@ -12,21 +12,34 @@ from i18n_wrapper import I18nEngine
 
 BASE_DIR = Path(__file__).resolve().parent
 BASE_CATALOG = BASE_DIR / "rpg_catalog.txt"
+ACTIVE_CATALOG = BASE_CATALOG
 RUNTIME_CATALOG = BASE_DIR / "_runtime_catalog.txt"
 RUNTIME_CATALOG_BIN = BASE_DIR / "_runtime_catalog.i18n"
 LOGBOOK_FILE = BASE_DIR / "knowledge.bin"
+SAVEGAME_FILE = BASE_DIR / "savegame.raw"
+
+
+def set_active_catalog_context(catalog_path: Path):
+    global ACTIVE_CATALOG, RUNTIME_CATALOG, RUNTIME_CATALOG_BIN, SAVEGAME_FILE, LOGBOOK_FILE
+    ACTIVE_CATALOG = catalog_path
+    suffix = catalog_path.stem.replace(" ", "_")
+    RUNTIME_CATALOG = BASE_DIR / f"_runtime_catalog_{suffix}.txt"
+    RUNTIME_CATALOG_BIN = BASE_DIR / f"_runtime_catalog_{suffix}.i18n"
+    SAVEGAME_FILE = BASE_DIR / f"savegame_{suffix}.raw"
+    LOGBOOK_FILE = BASE_DIR / f"knowledge_{suffix}.bin"
 
 SHARD_TOKENS = ["000W10", "000W11"]
 DEFAULT_SHARD_TOKEN = SHARD_TOKENS[0]
 DEFAULT_SECTOR_ID = "000W10"
 CATALOG_CACHE = {}
+SELECTION_CACHE = {}
+ 
 sector_registry = OrderedDict()
 STORY_DIR = BASE_DIR / "story_chapters"
 DEFAULT_STORY_CHAPTER = 1
 
 
-def update_catalog_cache_from_text(raw_text: str):
-    CATALOG_CACHE.clear()
+def parse_catalog_lines(raw_text: str, target: dict):
     for line in raw_text.splitlines():
         line = line.strip()
         if not line or line.startswith("@") or line.startswith("#"):
@@ -34,13 +47,45 @@ def update_catalog_cache_from_text(raw_text: str):
         if ":" not in line:
             continue
         key, value = line.split(":", 1)
-        CATALOG_CACHE[key.strip()] = value.strip()
+        target[key.strip()] = value.strip()
+
+
+def update_catalog_cache_from_text(raw_text: str):
+    CATALOG_CACHE.clear()
+    parse_catalog_lines(raw_text, CATALOG_CACHE)
+
+
+def ensure_selection_cache():
+    if SELECTION_CACHE:
+        return
+    if not BASE_CATALOG.exists():
+        return
+    parse_catalog_lines(BASE_CATALOG.read_text(encoding="utf-8"), SELECTION_CACHE)
+
+
+def translate_cached_token(token: str, cache: dict, args=None):
+    text = cache.get(token)
+    if not text:
+        return token
+    if args:
+        try:
+            formatted = text.format(*[str(arg) for arg in args])
+            text = formatted
+        except Exception:
+            for idx, arg in enumerate(args):
+                text = text.replace(f"%{idx}", str(arg))
+    return text
+
+
+def translate_selection_token(token: str, args=None):
+    ensure_selection_cache()
+    return translate_cached_token(token, SELECTION_CACHE, args)
 
 
 def ensure_catalog_cache():
     if CATALOG_CACHE:
         return
-    source = RUNTIME_CATALOG if RUNTIME_CATALOG.exists() else BASE_CATALOG
+    source = RUNTIME_CATALOG if RUNTIME_CATALOG.exists() else ACTIVE_CATALOG
     if not source.exists():
         return
     text = source.read_text(encoding="utf-8")
@@ -49,7 +94,15 @@ def ensure_catalog_cache():
 
 def catalog_lookup(token: str):
     ensure_catalog_cache()
-    return CATALOG_CACHE.get(token)
+    if token in CATALOG_CACHE:
+        return CATALOG_CACHE.get(token)
+    upper = token.upper()
+    if upper in CATALOG_CACHE:
+        return CATALOG_CACHE.get(upper)
+    lower = token.lower()
+    if lower in CATALOG_CACHE:
+        return CATALOG_CACHE.get(lower)
+    return None
 
 
 def resolve_catalog_token(engine: I18nEngine, token: str):
@@ -190,6 +243,10 @@ UI_TOKENS = {
     "error_generic": "000WAF",
     "error_catalog": "000WB0",
     "battle_status": "000WB1",
+    "catalog_selection_header": "000WB4",
+    "catalog_selection_entry": "000WB5",
+    "catalog_selection_prompt": "000WB6",
+    "catalog_selection_invalid": "000WB7",
 }
 
 SECTOR_NAME_TOKENS = {
@@ -559,14 +616,17 @@ class Player:
             skill_str,
             active_skill,
         ])
-        with open("savegame.raw", "w") as f: f.write(data)
+        SAVEGAME_FILE.parent.mkdir(exist_ok=True)
+        with SAVEGAME_FILE.open("w", encoding="utf-8") as f:
+            f.write(data)
         print(engine.translate("000107"))
 
     @staticmethod
     def load_game():
-        if not os.path.exists("savegame.raw"): return None
+        if not SAVEGAME_FILE.exists():
+            return None
         try:
-            with open("savegame.raw", "r") as f:
+            with SAVEGAME_FILE.open("r", encoding="utf-8") as f:
                 d = f.read().split(",")
                 p = Player("Operator")
                 v = list(map(float, d[:10]))
@@ -961,7 +1021,7 @@ def apply_shard_token(engine: I18nEngine, player: Player, token_id: str, announc
 
 
 def refresh_runtime_catalog(engine: I18nEngine, player: Player):
-    layers = [BASE_CATALOG.read_text()]
+    layers = [ACTIVE_CATALOG.read_text()]
     if player.current_shard_file and player.current_shard_file.exists():
         layers.append(player.current_shard_file.read_text())
     for pkg_id in player.knowledge_packages:
@@ -1078,10 +1138,15 @@ def run_script(player: Player, script: str, label: str, engine: I18nEngine):
     commands = []
     for clause in clauses:
         clause = clause.strip()
-        if not clause:
+        if not clause or ":" not in clause:
             continue
         key, value = clause.split(":", 1)
-        val = float(value)
+        key = key.strip()
+        value = value.strip()
+        try:
+            val = float(value)
+        except ValueError:
+            continue
         if key == "ATK_ADD":
             player.atk += val
             commands.append(f"{key}+{val}")
@@ -2189,25 +2254,40 @@ def select_game_catalog():
     catalog_files = sorted(catalogs_dir.glob("*_rpg_catalog.txt"))
     if not catalog_files:
         return BASE_CATALOG
-    print("\nVerfügbare Katalog-Spiele:")
+    header = translate_selection_token(UI_TOKENS["catalog_selection_header"])
+    if header:
+        print("\n" + header)
     for idx, path in enumerate(catalog_files, start=1):
-        print(f"({idx}) {path.stem}")
-    choice = input("> ").strip()
+        entry = translate_selection_token(UI_TOKENS["catalog_selection_entry"], [idx, path.stem])
+        print(entry)
+    prompt = translate_selection_token(UI_TOKENS["catalog_selection_prompt"])
+    prompt_text = prompt if prompt else "> "
+    choice = input(f"{prompt_text}\n> ").strip()
     if choice.isdigit():
         idx = int(choice) - 1
         if 0 <= idx < len(catalog_files):
             return catalog_files[idx]
+    invalid = translate_selection_token(UI_TOKENS["catalog_selection_invalid"])
+    if invalid:
+        print(invalid)
     return catalog_files[0]
 
 
 def main():
     catalog_path = select_game_catalog()
+    set_active_catalog_context(catalog_path)
+    if RUNTIME_CATALOG.exists():
+        RUNTIME_CATALOG.unlink()
+    if RUNTIME_CATALOG_BIN.exists():
+        RUNTIME_CATALOG_BIN.unlink()
     try:
         engine = I18nEngine()
         engine.load_file(str(catalog_path))
     except Exception as e:
-        print(f"Fehler: {e}")
+        print(translate_selection_token(UI_TOKENS["error_catalog"], [e]))
         return
+
+    CATALOG_CACHE.clear()
 
     player = Player.load_game() or Player("Operator")
     for pkg_id in player.knowledge_packages:
@@ -2220,7 +2300,11 @@ def main():
     except Exception as e:
         print(translate_with_fallback(engine, UI_TOKENS["error_catalog"], [e]))
         return
-    trigger_story_progress(engine, player)
+    player.story_state = "intro"
+    player.story_chapter = DEFAULT_STORY_CHAPTER
+    player.story_nodes = {}
+    player.story_history = []
+    player.story_effects = {}
     print("\n" + engine.translate("000100"))
 
     while True:

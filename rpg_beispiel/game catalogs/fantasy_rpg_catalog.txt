@@ -28,6 +28,7 @@
 000W98: Aurora-Pulse: Strahlen beruhigen die Sektoren.
 000W99: Kein Welt-Event aktiv.
 000W9A: Dieses Event ist bereits aktiv.
+000WB3: CHRONIK [%0]: %1
 000G10: Verdant-Konsortium
 000G11: Wächter der Knoten und Hüter der Stabilität im Glutheim.
 000G12: Aurora-Gesellschaft
@@ -61,15 +62,17 @@
 000WA8: Region
 000WA9: Welt-Event
 000WAA: Wissen
+000WAE: Matrix-Sitzung beendet...
+000WAF: Fehler: %0
 # --- MENÜS (0002..) ---
 000200: (1) Sektor scannen (2) Navigation (3) NPC & Shop (4) Status & Quests (5) Highscores (6) Speichern & Beenden (7) Welt-Events
 000M100: --- AETHER-MENÜ ---
 000M101: 1:SCAN:Orakelblick|2:NAV:Portal zu Regionen|3:SHOP:Gildenmarkt|4:STATUS:Chronik & Quests|5:HIGH:Ranglisten der Eldoran|6:SAVE:Hüter-Archiv|7:EVENT:Welten-Runen|8:STORY:Chroniken
-000201: AKTION: (1) Schlag (2) Mycel-Stoß (Schwer) (3) Reparatur (Heilen)
-000202: (1) Heil-Kit nutzen (2) Waffe wechseln (3) Zurück
+000201: AKTION: (1) Schlag (2) Runenstoß (Schwer) (3) Heilung (Licht)
+000202: (1) Heilkräuter nutzen (2) Runenwaffe wechseln (3) Zurück
 # --- PHYSIK & ANOMALIEN (000C10..) ---
 000C10: [STABILITÄT] Sektor-Integrität bei %0%. Physik-Konstanten normal.
-000C11: [ANOMALIE] GPU-Cube-Rauschen detektiert! Schaden fluktuiert um %0%.
+000C11: [ANOMALIE] Prisma-Flimmern detektiert! Schaden schwankt um %0%.
 000C12: [PHYSICS] Gravitations-Glitch! Dein Schlag wird beschleunigt (+%0 Schaden).
 # --- QUESTS (000D..) ---
 000D01: --- AKTIVE QUESTS ---
@@ -93,7 +96,7 @@
 000C27: Alle Trait-Steine sind bereits installiert.
 000C28: Keine neuen Schriftrollen im Lager.
 000C30: Stabilisatorsiegel: +15 HP, +3 ATK (Verdant-Konsortium benötigt).
-000C31: Leuchtkondensator: +10% Krit-Chance, +1 Toolkit (Aurora-Gesellschaft benötigt).
+000C31: Leuchtkondensator: +10% Krit-Chance, +1 Runenenergie (Aurora-Gesellschaft benötigt).
 000C32: %0 beschafft für %1 Goldmünzen.
 000B200: Händler-Tabernakel|ITEM:000I100=180,000I101=320,000I102=260,000I200=420,000I201=650|RESOURCE:000N50=45,000N51=35,000N52=60|SKILL:000K101=180,000K102=320,000K200=420
 000B201: Magischer Handel bereit. Schätze fließen durch jeden aktiven Zustand.
@@ -138,7 +141,7 @@
 # --- KAMPF-MODULE (LOGIK) ---
 # --- BESCHREIBUNGEN ---
 000D91: Overclock-Modul: +15 ATK, kostet 5 HP pro Einsatz.
-000D92: Instabile GPU: Dreifacher Krit-Schaden, senkt Sektor-Stabilität massiv.
+000D92: Instabiles Arkanlicht: Dreifacher Krit-Schaden, senkt Sektor-Stabilität massiv.
 # --- CALR (Context-Aware Logic Retrieval) ---
 000R10: ATK_ADD:4
 000R11: CRIT_ADD:0.1
@@ -156,8 +159,8 @@
 # --- WAFFEN (000E..) ---
 000E01: --+--- (Plasma-Klinge)
 000E02: Plasma-Klinge (+10 ATK)
-000E03: ==(O)== (Mycel-Stab)
-000E04: Mycel-Stab (+20% Krit-Chance)
+000E03: ==(O)== (Runenstab)
+000E04: Runenstab (+20% Krit-Chance)
 # --- KAMPF & BOSS ---
 000300: %0 (HP: %1) in Sektor %2 lokalisiert!
 000301: %0 -> %1: %2 Schaden übertragen.
